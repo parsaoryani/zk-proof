@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZK-Mixer - Anonymous Transaction Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            padding: 30px 0;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .stat-item {
+            margin: 12px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        .stat-value {
+            color: #333;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="password"],
+        textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-confirmed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-audited {
+            background: #dbeafe;
+            color: #0c4a6e;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab-button {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #666;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-button:hover {
+            color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #7f1d1d;
+            border-left: 4px solid #ef4444;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            color: #0c4a6e;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .transaction-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .transaction-item {
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+        }
+
+        .transaction-hash {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: #666;
+            word-break: break-all;
+        }
+
+        .health-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        .health-ok {
+            background: #10b981;
+        }
+
+        .health-error {
+            background: #ef4444;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            padding: 20px;
+            opacity: 0.9;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8rem;
+            }
+
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+        }
+
+        .copy-button {
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+
+        .divider {
+            border-top: 1px solid #e0e0e0;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔐 ZK-Mixer</h1>
+            <p>Anonymous Transaction Platform Powered by Zero-Knowledge Proofs</p>
+            <div style="margin-top: 15px;">
+                <span class="health-indicator health-ok"></span>
+                <span id="status-text" style="color: white; font-size: 0.95rem;">Connecting to service...</span>
+            </div>
+        </header>
+
+        <div class="dashboard">
+            <!-- Statistics Card -->
+            <div class="card">
+                <h2>📊 System Statistics</h2>
+                <div class="stat-item">
+                    <span class="stat-label">Total Deposits</span>
+                    <span class="stat-value" id="stat-deposits">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Total Withdrawals</span>
+                    <span class="stat-value" id="stat-withdrawals">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Total Volume</span>
+                    <span class="stat-value" id="stat-volume">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Active Commitments</span>
+                    <span class="stat-value" id="stat-commitments">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Spent Nullifiers</span>
+                    <span class="stat-value" id="stat-nullifiers">-</span>
+                </div>
+                <button class="btn-secondary" onclick="refreshStats()" style="width: 100%; margin-top: 15px;">
+                    Refresh Stats
+                </button>
+            </div>
+
+            <!-- Deposit Card -->
+            <div class="card">
+                <h2>💰 Make Deposit</h2>
+                <div id="deposit-alert"></div>
+                <form onsubmit="handleDeposit(event)">
+                    <div class="form-group">
+                        <label for="deposit-identity">Identity (will be encrypted):</label>
+                        <input type="text" id="deposit-identity" placeholder="Your anonymous ID" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="deposit-amount">Amount:</label>
+                        <input type="number" id="deposit-amount" placeholder="Amount to deposit" min="0.01" step="0.01" required>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" class="btn-primary">Deposit</button>
+                        <button type="reset" class="btn-secondary">Clear</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Withdraw Card -->
+            <div class="card">
+                <h2>🎁 Withdraw Anonymously</h2>
+                <div id="withdraw-alert"></div>
+                <form onsubmit="handleWithdraw(event)">
+                    <div class="form-group">
+                        <label for="withdraw-commitment">Commitment Hash (from deposit):</label>
+                        <input type="text" id="withdraw-commitment" placeholder="Paste commitment hash" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="withdraw-proof">ZK Proof (base64):</label>
+                        <textarea id="withdraw-proof" placeholder="Paste proof data" required></textarea>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" class="btn-success">Withdraw</button>
+                        <button type="reset" class="btn-secondary">Clear</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Main Transaction Panel -->
+        <div class="card">
+            <div class="tabs">
+                <button class="tab-button active" onclick="switchTab(event, 'transactions')">📋 Recent Transactions</button>
+                <button class="tab-button" onclick="switchTab(event, 'audit')">🔍 Audit</button>
+                <button class="tab-button" onclick="switchTab(event, 'state')">⚙️ System State</button>
+            </div>
+
+            <!-- Transactions Tab -->
+            <div id="transactions" class="tab-content active">
+                <h3 style="margin-bottom: 15px; color: #333;">Recent Transactions</h3>
+                <div id="transactions-alert"></div>
+                <div class="transaction-list" id="transaction-list">
+                    <p style="text-align: center; color: #999; padding: 20px;">Loading transactions...</p>
+                </div>
+                <button onclick="refreshTransactions()" class="btn-secondary" style="width: 100%; margin-top: 15px;">
+                    Refresh Transactions
+                </button>
+            </div>
+
+            <!-- Audit Tab -->
+            <div id="audit" class="tab-content">
+                <h3 style="margin-bottom: 15px; color: #333;">Regulatory Audit</h3>
+                <div id="audit-alert"></div>
+                <form onsubmit="handleAudit(event)">
+                    <div class="form-group">
+                        <label for="audit-tx-hash">Transaction Hash:</label>
+                        <input type="text" id="audit-tx-hash" placeholder="Transaction to audit" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="audit-key">Auditor Private Key (PEM format):</label>
+                        <textarea id="audit-key" placeholder="-----BEGIN PRIVATE KEY-----..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="audit-note">Audit Note (optional):</label>
+                        <input type="text" id="audit-note" placeholder="Reason for audit">
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" class="btn-danger">Perform Audit</button>
+                        <button type="reset" class="btn-secondary">Clear</button>
+                    </div>
+                </form>
+                <div id="audit-result" style="margin-top: 20px; display: none;">
+                    <h4 style="color: #333; margin-bottom: 10px;">Audit Result:</h4>
+                    <div style="background: #f0f0f0; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 0.85rem; white-space: pre-wrap; word-break: break-all;" id="audit-result-text"></div>
+                </div>
+            </div>
+
+            <!-- State Tab -->
+            <div id="state" class="tab-content">
+                <h3 style="margin-bottom: 15px; color: #333;">Current System State</h3>
+                <div id="state-content" style="background: #f9f9f9; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 0.85rem; white-space: pre-wrap; word-break: break-all; max-height: 400px; overflow-y: auto;">
+                    Loading state...
+                </div>
+                <button onclick="refreshState()" class="btn-secondary" style="width: 100%; margin-top: 15px;">
+                    Refresh State
+                </button>
+            </div>
+        </div>
+
+        <footer>
+            <p>ZK-Mixer © 2026 | Privacy-Preserving Transactions</p>
+        </footer>
+    </div>
+
+    <script>
+        const API_BASE = "http://localhost:8000";
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            checkHealth();
+            refreshStats();
+            refreshTransactions();
+            refreshState();
+            // Auto-refresh every 30 seconds
+            setInterval(() => {
+                checkHealth();
+                refreshStats();
+            }, 30000);
+        });
+
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                if (response.ok) {
+                    document.getElementById('status-text').textContent = '✓ Service running';
+                    document.querySelector('.health-indicator').classList.remove('health-error');
+                    document.querySelector('.health-indicator').classList.add('health-ok');
+                } else {
+                    setError('status-text', '✗ Service error');
+                }
+            } catch (error) {
+                document.getElementById('status-text').textContent = '✗ Service unavailable';
+                document.querySelector('.health-indicator').classList.add('health-error');
+            }
+        }
+
+        async function refreshStats() {
+            try {
+                const response = await fetch(`${API_BASE}/statistics`);
+                const data = await response.json();
+                document.getElementById('stat-deposits').textContent = data.total_deposits || 0;
+                document.getElementById('stat-withdrawals').textContent = data.total_withdrawals || 0;
+                document.getElementById('stat-volume').textContent = (data.total_volume || 0).toFixed(2);
+                document.getElementById('stat-commitments').textContent = data.num_commitments || 0;
+                document.getElementById('stat-nullifiers').textContent = data.num_nullifiers || 0;
+            } catch (error) {
+                console.error('Error fetching statistics:', error);
+            }
+        }
+
+        async function refreshState() {
+            try {
+                const response = await fetch(`${API_BASE}/state`);
+                const data = await response.json();
+                document.getElementById('state-content').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('state-content').textContent = 'Error loading state: ' + error.message;
+            }
+        }
+
+        async function refreshTransactions() {
+            try {
+                const response = await fetch(`${API_BASE}/transactions`);
+                const data = await response.json();
+                const txList = document.getElementById('transaction-list');
+                
+                if (data.transactions && data.transactions.length > 0) {
+                    txList.innerHTML = data.transactions.map(tx => `
+                        <div class="transaction-item">
+                            <div style="margin-bottom: 8px;">
+                                <strong>${tx.tx_type.toUpperCase()}</strong>
+                                <span class="status-badge status-${(tx.status || 'pending').toLowerCase()}">
+                                    ${(tx.status || 'PENDING').toUpperCase()}
+                                </span>
+                            </div>
+                            <div style="margin-bottom: 8px;">
+                                <span class="stat-label">Hash:</span><br>
+                                <span class="transaction-hash">${tx.transaction_hash}</span>
+                            </div>
+                            <div style="margin-bottom: 8px;">
+                                <span class="stat-label">Amount:</span>
+                                <span class="stat-value">${tx.amount}</span>
+                            </div>
+                            <div class="stat-label">
+                                ${new Date(tx.timestamp).toLocaleString()}
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    txList.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No transactions yet</p>';
+                }
+            } catch (error) {
+                document.getElementById('transaction-list').innerHTML = `<p style="color: #f44336; padding: 10px;">Error loading transactions: ${error.message}</p>`;
+            }
+        }
+
+        async function handleDeposit(event) {
+            event.preventDefault();
+            const identity = document.getElementById('deposit-identity').value;
+            const amount = parseFloat(document.getElementById('deposit-amount').value);
+            const alertDiv = document.getElementById('deposit-alert');
+
+            try {
+                showAlert(alertDiv, '<span class="spinner"></span> Processing deposit...', 'info');
+                
+                const response = await fetch(`${API_BASE}/deposit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identity, amount })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showAlert(alertDiv, `✓ Deposit successful! Commitment: ${data.commitment.substring(0, 32)}...`, 'success');
+                    document.querySelector('form').reset();
+                    setTimeout(() => {
+                        refreshStats();
+                        refreshTransactions();
+                    }, 1000);
+                } else {
+                    showAlert(alertDiv, `✗ Deposit failed: ${data.detail || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                showAlert(alertDiv, `✗ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function handleWithdraw(event) {
+            event.preventDefault();
+            const commitment = document.getElementById('withdraw-commitment').value;
+            const proof = document.getElementById('withdraw-proof').value;
+            const alertDiv = document.getElementById('withdraw-alert');
+
+            try {
+                showAlert(alertDiv, '<span class="spinner"></span> Processing withdrawal...', 'info');
+                
+                const response = await fetch(`${API_BASE}/withdraw`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ commitment, proof })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showAlert(alertDiv, `✓ Withdrawal successful! Receipt: ${data.receipt.substring(0, 32)}...`, 'success');
+                    document.querySelector('form').reset();
+                    setTimeout(() => {
+                        refreshStats();
+                        refreshTransactions();
+                    }, 1000);
+                } else {
+                    showAlert(alertDiv, `✗ Withdrawal failed: ${data.detail || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                showAlert(alertDiv, `✗ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function handleAudit(event) {
+            event.preventDefault();
+            const txHash = document.getElementById('audit-tx-hash').value;
+            const auditorKey = document.getElementById('audit-key').value;
+            const note = document.getElementById('audit-note').value;
+            const alertDiv = document.getElementById('audit-alert');
+            const resultDiv = document.getElementById('audit-result');
+
+            try {
+                showAlert(alertDiv, '<span class="spinner"></span> Performing audit...', 'info');
+                
+                const response = await fetch(`${API_BASE}/audit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        transaction_hash: txHash,
+                        auditor_private_key: auditorKey,
+                        auditor_note: note
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showAlert(alertDiv, '✓ Audit completed successfully', 'success');
+                    document.getElementById('audit-result-text').textContent = JSON.stringify(data, null, 2);
+                    resultDiv.style.display = 'block';
+                } else {
+                    showAlert(alertDiv, `✗ Audit failed: ${data.detail || 'Unknown error'}`, 'error');
+                    resultDiv.style.display = 'none';
+                }
+            } catch (error) {
+                showAlert(alertDiv, `✗ Error: ${error.message}`, 'error');
+                resultDiv.style.display = 'none';
+            }
+        }
+
+        function switchTab(event, tabName) {
+            event.preventDefault();
+            
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function showAlert(container, message, type) {
+            container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            if (type !== 'info') {
+                setTimeout(() => {
+                    container.innerHTML = '';
+                }, 5000);
+            }
+        }
+
+        function setError(elementId, message) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = message;
+            }
+        }
+    </script>
+</body>
+</html>

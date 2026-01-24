@@ -1,0 +1,32 @@
+# Core Cryptography
+cryptography>=40.0.0
+
+# Data Validation & Serialization
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# Database ORM
+sqlalchemy>=2.0.0
+alembic>=1.12.0
+
+# Testing
+pytest>=7.0.0
+pytest-cov>=4.0.0
+pytest-asyncio>=0.21.0
+
+# Utilities
+python-dotenv>=1.0.0
+click>=8.1.0
+
+# Logging
+python-json-logger>=2.0.0
+
+# Development
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.0.0
+isort>=5.12.0
+
+# Optional: FastAPI for REST API (if needed later)
+# fastapi>=0.95.0
+# uvicorn>=0.21.0
