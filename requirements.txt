@@ -1,5 +1,11 @@
 # Core Cryptography
 cryptography>=40.0.0
+pycryptodome>=3.17.0
+
+# Authentication & JWT
+PyJWT>=2.8.0
+passlib[bcrypt]>=1.7.4
+bcrypt>=4.0.0
 
 # Data Validation & Serialization
 pydantic>=2.0.0
@@ -27,6 +33,8 @@ flake8>=6.0.0
 mypy>=1.0.0
 isort>=5.12.0
 
-# Optional: FastAPI for REST API (if needed later)
+# API Framework
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
 # fastapi>=0.95.0
 # uvicorn>=0.21.0

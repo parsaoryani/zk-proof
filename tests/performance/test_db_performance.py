@@ -22,6 +22,20 @@ def test_transaction_write_performance():
     db = get_test_db("write")
     session = db.get_session()
     
+    # Create test user
+    from zkm.storage.database import User, UserRole
+    from zkm.security.auth import hash_password
+    
+    user = User(
+        username="perf_write_user",
+        password_hash=hash_password("test123"),
+        role=UserRole.USER,
+        is_active=True
+    )
+    session.add(user)
+    session.commit()
+    user_id = user.id
+    
     # Test writing 1000 transactions
     start = time.time()
     for i in range(1000):
@@ -30,6 +44,7 @@ def test_transaction_write_performance():
             transaction_hash=f"tx_hash_{i:04d}",
             tx_type=TransactionType.DEPOSIT,
             amount=100 + i,
+            user_id=user_id,
             status=TransactionStatus.CONFIRMED,
         )
     write_time = time.time() - start
@@ -46,6 +61,20 @@ def test_transaction_read_performance():
     db = get_test_db("read")
     session = db.get_session()
     
+    # Create test user
+    from zkm.storage.database import User, UserRole
+    from zkm.security.auth import hash_password
+    
+    user = User(
+        username="perf_read_user",
+        password_hash=hash_password("test123"),
+        role=UserRole.USER,
+        is_active=True
+    )
+    session.add(user)
+    session.commit()
+    user_id = user.id
+    
     # Setup: insert 1000 transactions
     for i in range(1000):
         db.add_transaction(
@@ -53,6 +82,7 @@ def test_transaction_read_performance():
             transaction_hash=f"tx_hash_{i:04d}",
             tx_type=TransactionType.DEPOSIT,
             amount=100 + i,
+            user_id=user_id,
             status=TransactionStatus.CONFIRMED,
         )
     session.commit()
@@ -112,6 +142,20 @@ def test_aggregate_query_performance():
     db = get_test_db("aggregate")
     session = db.get_session()
     
+    # Create test user
+    from zkm.storage.database import User, UserRole
+    from zkm.security.auth import hash_password
+    
+    user = User(
+        username="perf_agg_user",
+        password_hash=hash_password("test123"),
+        role=UserRole.USER,
+        is_active=True
+    )
+    session.add(user)
+    session.commit()
+    user_id = user.id
+    
     # Setup: insert transactions with different volumes
     for i in range(200):
         db.add_transaction(
@@ -119,6 +163,7 @@ def test_aggregate_query_performance():
             transaction_hash=f"tx_hash_{i:04d}",
             tx_type=TransactionType.DEPOSIT if i % 2 == 0 else TransactionType.WITHDRAWAL,
             amount=100 + i * 10,
+            user_id=user_id,
             status=TransactionStatus.CONFIRMED,
         )
     session.commit()

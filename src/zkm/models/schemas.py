@@ -42,6 +42,7 @@ class WithdrawalRequest(BaseModel):
     identity_encryption_proof: str = Field(..., description="Identity proof (hex)")
     encrypted_identity: str = Field(..., description="Encrypted identity (hex)")
     timestamp: datetime
+    withdrawal_amount: Optional[int] = Field(default=None, description="Amount being withdrawn (for balance tracking)")
 
 
 class WithdrawalResponse(BaseModel):
@@ -59,6 +60,7 @@ class AuditRequest(BaseModel):
     """Request model for audit operations."""
     transaction_hash: str = Field(..., description="Transaction to audit")
     auditor_private_key: str = Field(..., description="Auditor private key (PEM)")
+    auditor_note: Optional[str] = Field(default=None, description="Optional note for audit record")
 
 
 class AuditResponse(BaseModel):

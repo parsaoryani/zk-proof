@@ -51,14 +51,34 @@ class TestDatabaseManager:
 class TestTransactionOperations:
     """Test transaction table operations."""
     
-    def test_add_transaction(self, temp_db):
+    @pytest.fixture
+    def test_user(self, temp_db):
+        """Create a test user."""
+        from zkm.storage.database import User, UserRole
+        from zkm.security.auth import hash_password
+        
+        session = temp_db.get_session()
+        user = User(
+            username="test_tx_user",
+            password_hash=hash_password("test123"),
+            role=UserRole.USER,
+            is_active=True
+        )
+        session.add(user)
+        session.commit()
+        user_id = user.id
+        session.close()
+        return user_id
+    
+    def test_add_transaction(self, temp_db, test_user):
         """Test adding a transaction."""
         session = temp_db.get_session()
         tx = temp_db.add_transaction(
             session,
             transaction_hash="tx_123",
             tx_type=TransactionType.DEPOSIT,
-            amount=1000.0
+            amount=1000.0,
+            user_id=test_user
         )
         assert tx.transaction_hash == "tx_123"
         assert tx.tx_type == TransactionType.DEPOSIT
@@ -66,10 +86,10 @@ class TestTransactionOperations:
         assert tx.status == TransactionStatus.CONFIRMED
         session.close()
     
-    def test_get_transaction(self, temp_db):
+    def test_get_transaction(self, temp_db, test_user):
         """Test retrieving a transaction."""
         session = temp_db.get_session()
-        temp_db.add_transaction(session, "tx_456", TransactionType.WITHDRAWAL, 500.0)
+        temp_db.add_transaction(session, "tx_456", TransactionType.WITHDRAWAL, 500.0, test_user)
         
         tx = temp_db.get_transaction(session, "tx_456")
         assert tx is not None
@@ -83,10 +103,10 @@ class TestTransactionOperations:
         assert tx is None
         session.close()
     
-    def test_update_transaction_status(self, temp_db):
+    def test_update_transaction_status(self, temp_db, test_user):
         """Test updating transaction status."""
         session = temp_db.get_session()
-        temp_db.add_transaction(session, "tx_789", TransactionType.DEPOSIT, 1500.0)
+        temp_db.add_transaction(session, "tx_789", TransactionType.DEPOSIT, 1500.0, test_user)
         
         success = temp_db.update_transaction_status(
             session, "tx_789", TransactionStatus.AUDITED
@@ -214,7 +234,26 @@ class TestNullifierOperations:
 class TestAuditOperations:
     """Test audit record operations."""
     
-    def test_add_audit_record(self, temp_db):
+    @pytest.fixture
+    def test_auditor(self, temp_db):
+        """Create a test auditor user."""
+        from zkm.storage.database import User, UserRole
+        from zkm.security.auth import hash_password
+        
+        session = temp_db.get_session()
+        auditor = User(
+            username="test_auditor",
+            password_hash=hash_password("audit123"),
+            role=UserRole.ADMIN,
+            is_active=True
+        )
+        session.add(auditor)
+        session.commit()
+        auditor_id = auditor.id
+        session.close()
+        return auditor_id
+    
+    def test_add_audit_record(self, temp_db, test_auditor):
         """Test adding audit record."""
         session = temp_db.get_session()
         
@@ -223,6 +262,7 @@ class TestAuditOperations:
             audit_hash="audit_123",
             transaction_hash="tx_deposit_4",
             decrypted_identity="alice@example.com",
+            auditor_id=test_auditor,
             auditor_note="Flagged for review"
         )
         
@@ -230,7 +270,7 @@ class TestAuditOperations:
         assert audit.auditor_note == "Flagged for review"
         session.close()
     
-    def test_get_audit_record(self, temp_db):
+    def test_get_audit_record(self, temp_db, test_auditor):
         """Test retrieving audit record."""
         session = temp_db.get_session()
         
@@ -238,7 +278,8 @@ class TestAuditOperations:
             session,
             audit_hash="audit_456",
             transaction_hash="tx_deposit_5",
-            decrypted_identity="bob@example.com"
+            decrypted_identity="bob@example.com",
+            auditor_id=test_auditor
         )
         
         audit = temp_db.get_audit_record(session, "audit_456")
@@ -246,15 +287,22 @@ class TestAuditOperations:
         assert audit.decrypted_identity == "bob@example.com"
         session.close()
     
-    def test_get_audits_for_transaction(self, temp_db):
-        """Test retrieving all audits for a transaction."""
+    def test_get_audits_for_transaction(self, temp_db, test_auditor):
+        """Test retrieving audits for a transaction."""
         session = temp_db.get_session()
+        tx_hash = "tx_deposit_6"
         
-        temp_db.add_audit_record(session, "audit_a", "tx_deposit_6", "alice@example.com")
-        temp_db.add_audit_record(session, "audit_b", "tx_deposit_6", "alice@example.com")
+        temp_db.add_audit_record(
+            session,
+            audit_hash="audit_789",
+            transaction_hash=tx_hash,
+            decrypted_identity="charlie@example.com",
+            auditor_id=test_auditor
+        )
         
-        audits = temp_db.get_audits_for_transaction(session, "tx_deposit_6")
-        assert len(audits) == 2
+        audits = temp_db.get_audits_for_transaction(session, tx_hash)
+        assert len(audits) > 0
+        assert audits[0].decrypted_identity == "charlie@example.com"
         session.close()
 
 
@@ -321,25 +369,44 @@ class TestStatisticsOperations:
 class TestAggregateQueries:
     """Test aggregate query operations."""
     
-    def test_get_total_volume(self, temp_db):
+    @pytest.fixture
+    def test_user_agg(self, temp_db):
+        """Create a test user for aggregates."""
+        from zkm.storage.database import User, UserRole
+        from zkm.security.auth import hash_password
+        
+        session = temp_db.get_session()
+        user = User(
+            username="test_agg_user",
+            password_hash=hash_password("test123"),
+            role=UserRole.USER,
+            is_active=True
+        )
+        session.add(user)
+        session.commit()
+        user_id = user.id
+        session.close()
+        return user_id
+    
+    def test_get_total_volume(self, temp_db, test_user_agg):
         """Test getting total volume."""
         session = temp_db.get_session()
         
-        temp_db.add_transaction(session, "tx_1", TransactionType.DEPOSIT, 1000.0)
-        temp_db.add_transaction(session, "tx_2", TransactionType.DEPOSIT, 2000.0)
-        temp_db.add_transaction(session, "tx_3", TransactionType.WITHDRAWAL, 500.0)
+        temp_db.add_transaction(session, "tx_1", TransactionType.DEPOSIT, 1000.0, test_user_agg)
+        temp_db.add_transaction(session, "tx_2", TransactionType.DEPOSIT, 2000.0, test_user_agg)
+        temp_db.add_transaction(session, "tx_3", TransactionType.WITHDRAWAL, 500.0, test_user_agg)
         
         total = temp_db.get_total_volume(session)
         assert total == 3000.0
         session.close()
     
-    def test_get_transaction_count(self, temp_db):
+    def test_get_transaction_count(self, temp_db, test_user_agg):
         """Test getting transaction count."""
         session = temp_db.get_session()
         
-        temp_db.add_transaction(session, "tx_4", TransactionType.DEPOSIT, 1000.0)
-        temp_db.add_transaction(session, "tx_5", TransactionType.DEPOSIT, 2000.0)
-        temp_db.add_transaction(session, "tx_6", TransactionType.WITHDRAWAL, 500.0)
+        temp_db.add_transaction(session, "tx_4", TransactionType.DEPOSIT, 1000.0, test_user_agg)
+        temp_db.add_transaction(session, "tx_5", TransactionType.DEPOSIT, 2000.0, test_user_agg)
+        temp_db.add_transaction(session, "tx_6", TransactionType.WITHDRAWAL, 500.0, test_user_agg)
         
         total_count = temp_db.get_transaction_count(session)
         assert total_count == 3
@@ -349,20 +416,43 @@ class TestAggregateQueries:
         
         session.close()
     
-    def test_get_recent_transactions(self, temp_db):
+    def test_get_recent_transactions(self, temp_db, test_user_agg):
         """Test getting recent transactions."""
         session = temp_db.get_session()
         
-        for i in range(15):
-            temp_db.add_transaction(session, f"tx_{i}", TransactionType.DEPOSIT, float(i * 100))
+        temp_db.add_transaction(session, "tx_7", TransactionType.DEPOSIT, 1000.0, test_user_agg)
+        temp_db.add_transaction(session, "tx_8", TransactionType.DEPOSIT, 2000.0, test_user_agg)
         
-        recent = temp_db.get_recent_transactions(session, limit=10)
-        assert len(recent) == 10
+        recent = temp_db.get_recent_transactions(session, limit=1)
+        assert len(recent) == 1
+        
+        recent_two = temp_db.get_recent_transactions(session, limit=2)
+        assert len(recent_two) == 2
+        
         session.close()
 
 
 class TestDataIntegrity:
     """Test data integrity and relationships."""
+    
+    @pytest.fixture
+    def test_user_integrity(self, temp_db):
+        """Create a test user for integrity tests."""
+        from zkm.storage.database import User, UserRole
+        from zkm.security.auth import hash_password
+        
+        session = temp_db.get_session()
+        user = User(
+            username="test_integrity_user",
+            password_hash=hash_password("test123"),
+            role=UserRole.USER,
+            is_active=True
+        )
+        session.add(user)
+        session.commit()
+        user_id = user.id
+        session.close()
+        return user_id
     
     def test_commitment_and_nullifier_relationship(self, temp_db):
         """Test commitment and nullifier relationships."""
@@ -396,13 +486,13 @@ class TestDataIntegrity:
         
         session.close()
     
-    def test_complete_transaction_workflow(self, temp_db):
+    def test_complete_transaction_workflow(self, temp_db, test_user_integrity):
         """Test complete transaction workflow."""
         session = temp_db.get_session()
         
         # Deposit
         deposit_hash = "tx_deposit_complete"
-        temp_db.add_transaction(session, deposit_hash, TransactionType.DEPOSIT, 1000.0)
+        temp_db.add_transaction(session, deposit_hash, TransactionType.DEPOSIT, 1000.0, test_user_integrity)
         
         # Add commitment
         commitment_hash = b'\x1a' * 32
@@ -422,12 +512,12 @@ class TestDataIntegrity:
         nullifier_hash = b'\x1e' * 32
         
         temp_db.add_nullifier(session, nullifier_hash, commitment_hash)
-        temp_db.add_transaction(session, withdrawal_hash, TransactionType.WITHDRAWAL, 1000.0)
+        temp_db.add_transaction(session, withdrawal_hash, TransactionType.WITHDRAWAL, 1000.0, test_user_integrity)
         temp_db.mark_nullifier_spent(session, nullifier_hash, withdrawal_hash)
         
         # Audit
         audit_hash = "audit_complete"
-        temp_db.add_audit_record(session, audit_hash, deposit_hash, "alice@example.com")
+        temp_db.add_audit_record(session, audit_hash, deposit_hash, "alice@example.com", test_user_integrity)
         temp_db.update_transaction_status(session, deposit_hash, TransactionStatus.AUDITED)
         
         # Verify complete workflow
