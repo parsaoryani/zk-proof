@@ -8,6 +8,7 @@ from enum import Enum
 
 class TransactionStatus(str, Enum):
     """Transaction status enumeration."""
+
     PENDING = "pending"
     CONFIRMED = "confirmed"
     FAILED = "failed"
@@ -16,6 +17,7 @@ class TransactionStatus(str, Enum):
 
 class DepositRequest(BaseModel):
     """Request model for deposit operations."""
+
     identity: str = Field(..., description="User identity/address")
     amount: int = Field(..., gt=0, description="Amount to deposit")
     timestamp: Optional[datetime] = Field(default_factory=datetime.now)
@@ -23,41 +25,47 @@ class DepositRequest(BaseModel):
 
 class DepositResponse(BaseModel):
     """Response model for deposit operations."""
+
     commitment: str = Field(..., description="Commitment hash (hex)")
     commitment_index: int = Field(..., description="Index in Merkle tree")
     merkle_root: str = Field(..., description="Merkle root (hex)")
     encrypted_identity_proof: str = Field(..., description="Identity proof (hex)")
     deposit_hash: str = Field(..., description="Transaction hash")
     timestamp: datetime
-    
+
     class Config:
         from_attributes = True
 
 
 class WithdrawalRequest(BaseModel):
     """Request model for withdrawal operations."""
+
     nullifier: str = Field(..., description="Nullifier (hex)")
     merkle_path: List[str] = Field(..., description="Merkle path (hex list)")
     leaf_index: int = Field(..., description="Leaf index in tree")
     identity_encryption_proof: str = Field(..., description="Identity proof (hex)")
     encrypted_identity: str = Field(..., description="Encrypted identity (hex)")
     timestamp: datetime
-    withdrawal_amount: Optional[int] = Field(default=None, description="Amount being withdrawn (for balance tracking)")
+    withdrawal_amount: Optional[int] = Field(
+        default=None, description="Amount being withdrawn (for balance tracking)"
+    )
 
 
 class WithdrawalResponse(BaseModel):
     """Response model for withdrawal operations."""
+
     transaction_hash: str = Field(..., description="Transaction hash")
     status: TransactionStatus = Field(...)
     timestamp: datetime
     amount: int = Field(..., description="Withdrawal amount")
-    
+
     class Config:
         from_attributes = True
 
 
 class AuditRequest(BaseModel):
     """Request model for audit operations."""
+
     transaction_hash: str = Field(..., description="Transaction to audit")
     auditor_private_key: str = Field(..., description="Auditor private key (PEM)")
     auditor_note: Optional[str] = Field(default=None, description="Optional note for audit record")
@@ -65,17 +73,19 @@ class AuditRequest(BaseModel):
 
 class AuditResponse(BaseModel):
     """Response model for audit operations."""
+
     transaction_hash: str
     decrypted_identity: str = Field(..., description="Decrypted user identity")
     audit_timestamp: datetime
     auditor_note: Optional[str] = None
-    
+
     class Config:
         from_attributes = True
 
 
 class MixerStateResponse(BaseModel):
     """Response model for mixer state."""
+
     merkle_root: str = Field(..., description="Current Merkle root (hex)")
     tree_height: int = Field(..., description="Merkle tree height")
     num_commitments: int = Field(..., description="Number of commitments")
@@ -86,6 +96,7 @@ class MixerStateResponse(BaseModel):
 
 class TransactionRecord(BaseModel):
     """Record of a transaction."""
+
     transaction_hash: str
     transaction_type: str  # "deposit" or "withdrawal"
     amount: int
@@ -96,13 +107,14 @@ class TransactionRecord(BaseModel):
     encrypted_identity: Optional[str] = None
     audited: bool = False
     decrypted_identity: Optional[str] = None
-    
+
     class Config:
         from_attributes = True
 
 
 class MixerStatistics(BaseModel):
     """Statistics about the mixer."""
+
     total_deposits: int = 0
     total_withdrawals: int = 0
     total_volume: int = 0

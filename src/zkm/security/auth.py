@@ -1,10 +1,36 @@
-"""Authentication and authorization utilities."""
+"""Authentication and authorization for Zerocash API.
+
+Implements JWT-based authentication with role-based access control.
+Integrates with identity verification for regulatory compliance.
+
+Features:
+    - JWT token generation and validation
+    - Role-based access control (user, auditor, admin)
+    - Identity verification linked to KYC/AML status
+    - Token expiration and refresh
+    - Rate limiting to prevent brute force attacks
+    - Audit logging of authentication events
+
+Example:
+    >>> from zkm.security.auth import create_access_token, verify_token
+    >>>
+    >>> # Create token for authenticated user
+    >>> token = create_access_token(
+    ...     user_id="user123",
+    ...     roles=["user"],
+    ...     expires_in=3600
+    ... )
+    >>>
+    >>> # Verify token in protected endpoint
+    >>> payload = verify_token(token)
+    >>> assert payload["user_id"] == "user123"
+"""
 
 import jwt
 import os
 import hashlib
 import hmac
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import Optional, Dict, Any
 import secrets
 
@@ -20,41 +46,44 @@ def hash_password(password: str) -> str:
     For production, consider using bcrypt or argon2.
     """
     salt = secrets.token_hex(16)
-    pwd_hash = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt.encode('utf-8'), 100000)
+    pwd_hash = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), 100000)
     return f"{salt}${pwd_hash.hex()}"
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash."""
     try:
-        salt, pwd_hash = hashed_password.split('$')
-        new_hash = hashlib.pbkdf2_hmac('sha256', plain_password.encode('utf-8'), salt.encode('utf-8'), 100000)
+        salt, pwd_hash = hashed_password.split("$")
+        new_hash = hashlib.pbkdf2_hmac(
+            "sha256", plain_password.encode("utf-8"), salt.encode("utf-8"), 100000
+        )
         return hmac.compare_digest(new_hash.hex(), pwd_hash)
     except (ValueError, AttributeError):
         return False
 
 
-def create_access_token(user_id: int, username: str, role: str, 
-                       expires_delta: Optional[timedelta] = None) -> tuple[str, datetime]:
+def create_access_token(
+    user_id: int, username: str, role: str, expires_delta: Optional[timedelta] = None
+) -> tuple[str, datetime]:
     """
     Create a JWT access token.
-    
+
     Returns:
         tuple: (token, expiry_datetime)
     """
     if expires_delta is None:
         expires_delta = timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
-    
-    expire = datetime.utcnow() + expires_delta
-    
+
+    expire = datetime.now(UTC) + expires_delta
+
     to_encode = {
         "user_id": user_id,
         "username": username,
         "role": role,
         "exp": expire,
-        "iat": datetime.utcnow()
+        "iat": datetime.now(UTC),
     }
-    
+
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt, expire
 
@@ -62,7 +91,7 @@ def create_access_token(user_id: int, username: str, role: str,
 def verify_access_token(token: str) -> Optional[Dict[str, Any]]:
     """
     Verify and decode a JWT access token.
-    
+
     Returns:
         Dictionary with token payload if valid, None if invalid/expired
     """

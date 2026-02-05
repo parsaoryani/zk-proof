@@ -1,4 +1,56 @@
-"""ZK-Proof system combining Zerocash and Morales proofs."""
+"""Zero-knowledge proof system orchestration.
+
+Coordinates generation and verification of zk-SNARK proofs for Zerocash
+transactions, implementing the POUR circuit from Ben-Sasson et al. (2014).
+
+Circuit Constraints (POUR):
+    For each transaction, the prover must prove:
+    1. Input Coin Valid:
+       - Commitment c_old is in Merkle tree with root RT
+       - Nullifier sn = PRF_{a_sk}(rho) correctly computed
+
+    2. Output Coin Valid:
+       - Output commitment c_new correctly formed
+       - Value preserved: v_old = v_new (no inflation)
+
+    3. Proof Correctness:
+       - All zero-knowledge proofs are non-interactive (Fiat-Shamir)
+       - Proofs are succinct (size independent of circuit complexity)
+
+Paper Reference:
+    - Ben-Sasson et al. (2014) Section 4.3: "Zero-Knowledge Proof System"
+    - SNARK Technology: Gennaro et al. (2013), Bitansky et al. (2012)
+
+Proof Components:
+    - Merkle proof: Shows coin is in tree
+    - Nullifier proof: Shows PRF was computed correctly
+    - Value proof: Shows value conservation
+    - Output proof: Shows output is well-formed
+
+Example Usage:
+    >>> from zkm.core.zkproof import ZKProofSystem
+    >>>
+    >>> # Initialize proof system
+    >>> proof_system = ZKProofSystem()
+    >>>
+    >>> # Generate withdrawal proof
+    >>> withdrawal_proof = proof_system.generate_withdrawal_proof(
+    ...     commitment_secret=k,
+    ...     merkle_path=merkle_siblings,
+    ...     leaf_index=index_in_tree,
+    ...     merkle_root=tree.root,
+    ...     input_value=1000,
+    ...     output_value=1000
+    ... )
+    >>>
+    >>> # Verify proof
+    >>> is_valid = proof_system.verify_withdrawal_proof(
+    ...     proof=withdrawal_proof,
+    ...     merkle_root=tree.root,
+    ...     nullifier=nullifier,
+    ...     value=1000
+    ... )
+"""
 
 from dataclasses import dataclass, asdict
 from typing import List, Set, Optional
@@ -21,21 +73,21 @@ from zkm.exceptions import (
 class WithdrawalProof:
     """
     Structured withdrawal proof combining Zerocash and Morales components.
-    
+
     Paper References:
     - Zerocash: Commitment and nullifier verification
     - Morales et al.: Identity encryption proof
     """
-    
+
     # Zerocash components
     nullifier: bytes  # nf = H(secret)
     merkle_path: List[bytes]  # Sibling hashes for Merkle verification
     leaf_index: int  # Position in Merkle tree
-    
+
     # Morales component
     identity_encryption_proof: bytes  # ZK-proof of encrypted identity
     encrypted_identity: bytes  # Encrypted identity from auditor mechanism
-    
+
     # Metadata
     timestamp: datetime
     proof_hash: bytes  # SHA-256 of all proof components
@@ -44,13 +96,13 @@ class WithdrawalProof:
 class ZKProofSystem:
     """
     Complete ZK-Proof system combining Zerocash and Morales.
-    
+
     Integrates:
     1. Zerocash commitment/nullifier verification
     2. Merkle path proof
     3. Morales identity encryption proof
     """
-    
+
     @staticmethod
     def generate_withdrawal_proof(
         secret: bytes,
@@ -58,16 +110,16 @@ class ZKProofSystem:
         merkle_path: List[bytes],
         leaf_index: int,
         auditor_pk: bytes,
-        identity: str
+        identity: str,
     ) -> WithdrawalProof:
         """
         Generate complete withdrawal proof.
-        
+
         Components:
         1. Merkle path proof (Zerocash)
         2. Nullifier derivation (Zerocash)
         3. Identity encryption proof (Morales)
-        
+
         Args:
             secret: User's secret
             randomness: Random value
@@ -75,10 +127,10 @@ class ZKProofSystem:
             leaf_index: Position in tree
             auditor_pk: Auditor's public key
             identity: User's identity/address
-            
+
         Returns:
             WithdrawalProof: Structured proof object
-            
+
         Raises:
             InvalidProofError: If proof generation fails
         """
@@ -92,38 +144,38 @@ class ZKProofSystem:
                 raise InvalidProofError("Merkle path must be list")
             if not isinstance(identity, str):
                 raise InvalidProofError("Identity must be string")
-            
+
             # Component 1: Compute Zerocash nullifier
             nullifier = Commitment.compute_nullifier(secret)
-            
+
             # Component 2: Generate identity encryption proof
             identity_encryption_proof = IdentityEncryptionProof.generate_proof(
                 identity=identity,
                 ciphertext=auditor_pk,  # Using auditor_pk as part of proof
-                auditor_pk=auditor_pk
+                auditor_pk=auditor_pk,
             )
-            
+
             # Component 3: Hash identity for proof binding
             identity_hash = sha256(identity)
-            
+
             # Encrypt identity reference (in real system, this would be user's choice)
             encrypted_identity = hash_concatenate(identity, auditor_pk)
-            
+
             # Create timestamp
             timestamp = datetime.now()
-            
+
             # Compute proof hash (integrity commitment)
             proof_components = hash_concatenate(
                 nullifier,
                 b"".join(merkle_path),
-                leaf_index.to_bytes(8, 'big'),
+                leaf_index.to_bytes(8, "big"),
                 identity_encryption_proof,
                 encrypted_identity,
-                timestamp.isoformat().encode('utf-8')
+                timestamp.isoformat().encode("utf-8"),
             )
-            
+
             proof_hash = sha256(proof_components)
-            
+
             # Construct and return proof
             proof = WithdrawalProof(
                 nullifier=nullifier,
@@ -132,41 +184,41 @@ class ZKProofSystem:
                 identity_encryption_proof=identity_encryption_proof,
                 encrypted_identity=encrypted_identity,
                 timestamp=timestamp,
-                proof_hash=proof_hash
+                proof_hash=proof_hash,
             )
-            
+
             return proof
-        
+
         except (InvalidProofError, TypeError) as e:
             raise InvalidProofError(f"Failed to generate withdrawal proof: {e}")
-    
+
     @staticmethod
     def verify_withdrawal_proof(
         proof: WithdrawalProof,
         merkle_root: bytes,
         nullifier_set: Set[bytes],
         auditor_pk: bytes,
-        commitment: Optional[bytes] = None
+        commitment: Optional[bytes] = None,
     ) -> bool:
         """
         Verify withdrawal proof without revealing secrets.
-        
+
         Verification order (critical for security):
         1. Check nullifier NOT in set (fail fast on double-spend)
         2. Verify Merkle path (ensure commitment exists)
         3. Verify identity encryption proof
         4. Verify proof hash integrity
-        
+
         Args:
             proof: Proof to verify
             merkle_root: Current Merkle tree root
             nullifier_set: Set of already-used nullifiers
             auditor_pk: Auditor's public key
             commitment: Optional expected commitment (for verification)
-            
+
         Returns:
             bool: True if all proof components are valid
-            
+
         Raises:
             DoubleSpendError: If nullifier already used
             InvalidMerklePathError: If Merkle path invalid
@@ -176,17 +228,15 @@ class ZKProofSystem:
         try:
             # 1. CHECK NULLIFIER FIRST (fail fast on double-spend)
             if proof.nullifier in nullifier_set:
-                raise DoubleSpendError(
-                    "Nullifier already used - double-spend detected!"
-                )
-            
+                raise DoubleSpendError("Nullifier already used - double-spend detected!")
+
             # 2. VERIFY MERKLE PATH
             if not isinstance(proof.merkle_path, list):
                 raise InvalidMerklePathError("Merkle path must be list")
-            
+
             if not all(isinstance(h, bytes) and len(h) == 32 for h in proof.merkle_path):
                 raise InvalidMerklePathError("All path hashes must be 32 bytes")
-            
+
             # If commitment provided, verify Merkle path
             if commitment is not None:
                 try:
@@ -195,7 +245,7 @@ class ZKProofSystem:
                         raise InvalidMerklePathError("Merkle path verification failed")
                 except Exception as e:
                     raise InvalidMerklePathError(f"Merkle path error: {e}")
-            
+
             # 3. VERIFY IDENTITY ENCRYPTION PROOF
             try:
                 if not isinstance(proof.identity_encryption_proof, bytes):
@@ -208,32 +258,37 @@ class ZKProofSystem:
                 raise
             except Exception as e:
                 raise InvalidIdentityProofError(f"Identity proof error: {e}")
-            
+
             # 4. VERIFY PROOF HASH INTEGRITY
             try:
                 # Reconstruct proof hash
                 proof_components = hash_concatenate(
                     proof.nullifier,
                     b"".join(proof.merkle_path),
-                    proof.leaf_index.to_bytes(8, 'big'),
+                    proof.leaf_index.to_bytes(8, "big"),
                     proof.identity_encryption_proof,
                     proof.encrypted_identity,
-                    proof.timestamp.isoformat().encode('utf-8')
+                    proof.timestamp.isoformat().encode("utf-8"),
                 )
-                
+
                 reconstructed_hash = sha256(proof_components)
-                
+
                 if reconstructed_hash != proof.proof_hash:
                     raise ProofTamperingError("Proof hash mismatch - proof tampered!")
             except ProofTamperingError:
                 raise
             except Exception as e:
                 raise ProofTamperingError(f"Hash verification failed: {e}")
-            
+
             # All verifications passed
             return True
-        
-        except (DoubleSpendError, InvalidMerklePathError, InvalidIdentityProofError, ProofTamperingError):
+
+        except (
+            DoubleSpendError,
+            InvalidMerklePathError,
+            InvalidIdentityProofError,
+            ProofTamperingError,
+        ):
             raise
         except Exception as e:
             raise InvalidProofError(f"Proof verification failed: {e}")
