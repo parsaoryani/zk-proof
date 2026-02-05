@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Components Test</title>
+    <link rel="stylesheet" href="app.css">
+    <style>
+        .test-section {
+            background: white;
+            padding: 30px;
+            margin: 20px auto;
+            max-width: 1200px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .test-section h2 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .component-demo {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9fafb;
+        }
+        .status-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .status-pass { background: #d1fae5; color: #065f46; }
+        .status-fail { background: #fee2e2; color: #991b1b; }
+        body {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-section fade-in">
+        <h2>🧪 Frontend Component Test Suite</h2>
+        <p>Testing all new frontend components and utilities...</p>
+        <div id="testResults"></div>
+    </div>
+
+    <div class="test-section fade-in">
+        <h2>🎨 UI Components</h2>
+        
+        <h3>Buttons</h3>
+        <div class="test-grid">
+            <button class="btn btn-primary">Primary</button>
+            <button class="btn btn-secondary">Secondary</button>
+            <button class="btn btn-success">Success</button>
+            <button class="btn btn-danger">Danger</button>
+            <button class="btn btn-outline">Outline</button>
+            <button class="btn btn-primary loading">Loading</button>
+        </div>
+
+        <h3>Badges</h3>
+        <div class="flex gap-2">
+            <span class="badge badge-primary">Primary</span>
+            <span class="badge badge-success">Success</span>
+            <span class="badge badge-warning">Warning</span>
+            <span class="badge badge-danger">Danger</span>
+        </div>
+
+        <h3>Progress Bar</h3>
+        <div id="progressTest"></div>
+
+        <h3>Form Elements</h3>
+        <div class="form-group">
+            <label>Sample Input</label>
+            <input type="text" placeholder="Enter text..." value="Test input">
+        </div>
+        <div class="form-group">
+            <label>Sample Select</label>
+            <select>
+                <option>Option 1</option>
+                <option>Option 2</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="test-section fade-in">
+        <h2>⚡ JavaScript Utilities</h2>
+        <div class="test-grid">
+            <div class="component-demo">
+                <h4>Toast Notifications</h4>
+                <button class="btn btn-sm btn-primary" onclick="testToast('success')">Success</button>
+                <button class="btn btn-sm btn-danger" onclick="testToast('error')">Error</button>
+                <button class="btn btn-sm btn-warning" onclick="testToast('warning')">Warning</button>
+                <button class="btn btn-sm btn-secondary" onclick="testToast('info')">Info</button>
+            </div>
+            
+            <div class="component-demo">
+                <h4>Theme Toggle</h4>
+                <button class="btn btn-sm btn-primary" onclick="testTheme()">Toggle Theme</button>
+                <p class="mt-2">Current: <strong id="currentTheme">light</strong></p>
+            </div>
+            
+            <div class="component-demo">
+                <h4>Clipboard</h4>
+                <button class="btn btn-sm btn-primary" onclick="testClipboard()">Copy Text</button>
+            </div>
+            
+            <div class="component-demo">
+                <h4>String Utilities</h4>
+                <button class="btn btn-sm btn-primary" onclick="testStringUtils()">Test</button>
+                <div id="stringUtilResults" class="mt-2" style="font-size: 0.85rem;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section fade-in">
+        <h2>✅ Component Status</h2>
+        <div id="componentStatus"></div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Run tests
+        const tests = [];
+        
+        function addTest(name, test) {
+            try {
+                test();
+                tests.push({ name, status: 'pass', error: null });
+            } catch (error) {
+                tests.push({ name, status: 'fail', error: error.message });
+            }
+        }
+        
+        // Test 1: Toast Manager exists
+        addTest('Toast Manager', () => {
+            if (!window.toast) throw new Error('Toast not found');
+            if (typeof toast.success !== 'function') throw new Error('Toast methods missing');
+        });
+        
+        // Test 2: Theme Manager exists
+        addTest('Theme Manager', () => {
+            if (!window.themeManager) throw new Error('ThemeManager not found');
+            if (typeof themeManager.toggle !== 'function') throw new Error('Toggle method missing');
+        });
+        
+        // Test 3: Loading Manager exists
+        addTest('Loading Manager', () => {
+            if (!window.loadingManager) throw new Error('LoadingManager not found');
+        });
+        
+        // Test 4: Form Validator exists
+        addTest('Form Validator', () => {
+            if (!window.FormValidator) throw new Error('FormValidator not found');
+            if (typeof FormValidator.required !== 'function') throw new Error('Validators missing');
+        });
+        
+        // Test 5: Utility functions exist
+        addTest('Utility Functions', () => {
+            if (typeof copyToClipboard !== 'function') throw new Error('copyToClipboard missing');
+            if (typeof truncateHash !== 'function') throw new Error('truncateHash missing');
+            if (typeof formatCurrency !== 'function') throw new Error('formatCurrency missing');
+            if (typeof debounce !== 'function') throw new Error('debounce missing');
+        });
+        
+        // Test 6: Storage Helper exists
+        addTest('Storage Helper', () => {
+            if (!window.StorageHelper) throw new Error('StorageHelper not found');
+            StorageHelper.set('test', { value: 123 });
+            const result = StorageHelper.get('test');
+            if (result.value !== 123) throw new Error('Storage not working');
+            StorageHelper.remove('test');
+        });
+        
+        // Test 7: Modal Manager exists
+        addTest('Modal Manager', () => {
+            if (!window.ModalManager) throw new Error('ModalManager not found');
+        });
+        
+        // Test 8: API Helper exists
+        addTest('API Helper', () => {
+            if (!window.APIHelper) throw new Error('APIHelper not found');
+            const api = new APIHelper('http://test');
+            if (!api.get) throw new Error('API methods missing');
+        });
+        
+        // Display results
+        const resultsDiv = document.getElementById('testResults');
+        const statusDiv = document.getElementById('componentStatus');
+        
+        const passed = tests.filter(t => t.status === 'pass').length;
+        const failed = tests.filter(t => t.status === 'fail').length;
+        
+        resultsDiv.innerHTML = `
+            <div class="flex gap-3 mt-3">
+                <div class="status-indicator status-pass">✓ ${passed} Passed</div>
+                <div class="status-indicator status-fail">✗ ${failed} Failed</div>
+            </div>
+        `;
+        
+        statusDiv.innerHTML = tests.map(test => `
+            <div class="flex justify-between items-center p-2 mb-2 bg-gray-50 rounded">
+                <span>${test.name}</span>
+                <span class="status-indicator status-${test.status}">
+                    ${test.status === 'pass' ? '✓' : '✗'} ${test.status.toUpperCase()}
+                </span>
+            </div>
+        `).join('');
+        
+        // Interactive test functions
+        function testToast(type) {
+            toast[type](`This is a ${type} message!`);
+        }
+        
+        function testTheme() {
+            const newTheme = themeManager.toggle();
+            document.getElementById('currentTheme').textContent = newTheme;
+        }
+        
+        function testClipboard() {
+            copyToClipboard('This text was copied!', 'Text copied successfully!');
+        }
+        
+        function testStringUtils() {
+            const results = document.getElementById('stringUtilResults');
+            results.innerHTML = `
+                <div>Hash: ${truncateHash('0x1234567890abcdef1234567890abcdef')}</div>
+                <div>Currency: ${formatCurrency(1234567.89)}</div>
+                <div>Date: ${formatDate(new Date())}</div>
+            `;
+        }
+        
+        // Test progress bar
+        const progress = new ProgressBar('progressTest');
+        let value = 0;
+        setInterval(() => {
+            value = (value + 10) % 110;
+            progress.set(value);
+        }, 500);
+        
+        // Show success message
+        setTimeout(() => {
+            toast.success('All frontend components loaded successfully! 🎉');
+        }, 500);
+    </script>
+</body>
+</html>

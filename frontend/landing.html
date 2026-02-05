@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZK-Mixer - Privacy-Preserving Anonymous Transactions</title>
+    <link rel="stylesheet" href="app.css">
+    <style>
+        /* Landing Page Styles */
+        body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            transition: all var(--transition-normal);
+        }
+
+        .navbar.scrolled {
+            padding: 15px 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--bg-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color var(--transition-fast);
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-color);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-gradient);
+            color: white;
+            text-align: center;
+            padding: 100px 20px 60px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            top: -200px;
+            right: -200px;
+            animation: float 20s infinite;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            bottom: -100px;
+            left: -100px;
+            animation: float 15s infinite reverse;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-50px) rotate(180deg); }
+        }
+
+        .hero-content {
+            max-width: 800px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            margin-bottom: 40px;
+            opacity: 0.95;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-hero {
+            padding: 16px 40px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all var(--transition-normal);
+            display: inline-block;
+        }
+
+        .btn-hero-primary {
+            background: white;
+            color: var(--primary-color);
+        }
+
+        .btn-hero-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .btn-hero-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn-hero-secondary:hover {
+            background: white;
+            color: var(--primary-color);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 100px 20px;
+            background: white;
+        }
+
+        .section-header {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 60px;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .section-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+
+        .features-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+        }
+
+        .feature-card {
+            text-align: center;
+            padding: 40px 30px;
+            border-radius: var(--border-radius-md);
+            transition: all var(--transition-normal);
+            border: 2px solid transparent;
+        }
+
+        .feature-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+        }
+
+        .feature-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .feature-title {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .feature-description {
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        /* How It Works */
+        .how-it-works {
+            padding: 100px 20px;
+            background: linear-gradient(135deg, #f6f9fc 0%, #eef2f7 100%);
+        }
+
+        .steps-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .step {
+            display: flex;
+            gap: 40px;
+            align-items: center;
+            margin-bottom: 60px;
+        }
+
+        .step:nth-child(even) {
+            flex-direction: row-reverse;
+        }
+
+        .step-number {
+            flex-shrink: 0;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--bg-gradient);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-title {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .step-description {
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Stats Section */
+        .stats-section {
+            padding: 80px 20px;
+            background: var(--bg-gradient);
+            color: white;
+        }
+
+        .stats-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 40px;
+            text-align: center;
+        }
+
+        .stat-box {
+            padding: 20px;
+        }
+
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            padding: 100px 20px;
+            background: white;
+            text-align: center;
+        }
+
+        .cta-content {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .cta-title {
+            font-size: 2.5rem;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .cta-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+        }
+
+        /* Footer */
+        .footer {
+            padding: 60px 20px 30px;
+            background: #1f2937;
+            color: white;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-section h3 {
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+        }
+
+        .footer-links {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: color var(--transition-fast);
+        }
+
+        .footer-links a:hover {
+            color: white;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Mobile Menu */
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: white;
+                flex-direction: column;
+                padding: 20px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            }
+
+            .nav-links.active {
+                display: flex;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+
+            .step {
+                flex-direction: column !important;
+                text-align: center;
+            }
+
+            .stat-number {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="logo">🔐 ZK-Mixer</div>
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+            <div class="nav-links" id="navLinks">
+                <a href="#features">Features</a>
+                <a href="#how-it-works">How It Works</a>
+                <a href="crypto-dashboard.html">Crypto Lab</a>
+                <a href="crypto-flow.html">Flow Diagram</a>
+                <a href="index.html" class="btn btn-primary btn-sm">Launch App</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content fade-in">
+            <h1>Privacy-Preserving Anonymous Transactions</h1>
+            <p>Experience true financial privacy with Zero-Knowledge Proofs. Transact anonymously without compromising security.</p>
+            
+            <!-- Backend Status Indicator -->
+            <div id="connection-status" style="margin: 20px auto; padding: 12px 24px; border-radius: 8px; display: inline-block; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3);">
+                <span id="status-icon">⏳</span> <span id="status-text">Checking backend...</span>
+            </div>
+            
+            <div class="hero-buttons">
+                <a href="index.html" class="btn-hero btn-hero-primary">Get Started</a>
+                <a href="#how-it-works" class="btn-hero btn-hero-secondary">Learn More</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="section-header">
+            <h2 class="section-title">Powerful Features</h2>
+            <p class="section-subtitle">Built with cutting-edge cryptographic technology for maximum privacy and security</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card fade-in">
+                <div class="feature-icon">🔐</div>
+                <h3 class="feature-title">Zero-Knowledge Proofs</h3>
+                <p class="feature-description">Prove transaction validity without revealing any sensitive information using advanced ZK-SNARK technology.</p>
+            </div>
+            <div class="feature-card fade-in" style="animation-delay: 0.1s">
+                <div class="feature-icon">🎭</div>
+                <h3 class="feature-title">Complete Anonymity</h3>
+                <p class="feature-description">Break the link between deposits and withdrawals with cryptographic commitments and nullifiers.</p>
+            </div>
+            <div class="feature-card fade-in" style="animation-delay: 0.2s">
+                <div class="feature-icon">🌳</div>
+                <h3 class="feature-title">Merkle Tree Security</h3>
+                <p class="feature-description">Efficient verification of transactions using sparse Merkle trees for optimal performance.</p>
+            </div>
+            <div class="feature-card fade-in" style="animation-delay: 0.3s">
+                <div class="feature-icon">🔍</div>
+                <h3 class="feature-title">Auditable System</h3>
+                <p class="feature-description">Optional auditing capabilities for compliance without sacrificing user privacy.</p>
+            </div>
+            <div class="feature-card fade-in" style="animation-delay: 0.4s">
+                <div class="feature-icon">⚡</div>
+                <h3 class="feature-title">High Performance</h3>
+                <p class="feature-description">Optimized cryptographic operations for fast transaction processing and verification.</p>
+            </div>
+            <div class="feature-card fade-in" style="animation-delay: 0.5s">
+                <div class="feature-icon">🛡️</div>
+                <h3 class="feature-title">Military-Grade Security</h3>
+                <p class="feature-description">Built on proven cryptographic primitives with comprehensive security testing.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="section-header">
+            <h2 class="section-title">How It Works</h2>
+            <p class="section-subtitle">Simple steps to achieve complete transaction privacy</p>
+        </div>
+        <div class="steps-container">
+            <div class="step fade-in">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3 class="step-title">Create an Account</h3>
+                    <p class="step-description">Sign up with a username and password. Your credentials are securely hashed and stored with modern encryption.</p>
+                </div>
+            </div>
+            <div class="step fade-in">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3 class="step-title">Make a Deposit</h3>
+                    <p class="step-description">Deposit funds and receive a secret commitment. This creates an anonymous entry in our Merkle tree that only you can prove ownership of.</p>
+                </div>
+            </div>
+            <div class="step fade-in">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3 class="step-title">Wait for Mixing</h3>
+                    <p class="step-description">As more users deposit, your transaction gets mixed with others, making it impossible to trace the source.</p>
+                </div>
+            </div>
+            <div class="step fade-in">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h3 class="step-title">Withdraw Anonymously</h3>
+                    <p class="step-description">Generate a Zero-Knowledge proof of your deposit and withdraw to any address without revealing your identity.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="stats-container">
+            <div class="stat-box fade-in">
+                <div class="stat-number" id="totalUsers">1,234</div>
+                <div class="stat-label">Active Users</div>
+            </div>
+            <div class="stat-box fade-in" style="animation-delay: 0.1s">
+                <div class="stat-number" id="totalTransactions">5,678</div>
+                <div class="stat-label">Transactions</div>
+            </div>
+            <div class="stat-box fade-in" style="animation-delay: 0.2s">
+                <div class="stat-number" id="totalVolume">$2.4M</div>
+                <div class="stat-label">Total Volume</div>
+            </div>
+            <div class="stat-box fade-in" style="animation-delay: 0.3s">
+                <div class="stat-number">100%</div>
+                <div class="stat-label">Privacy</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="cta-content">
+            <h2 class="cta-title">Ready to Experience True Privacy?</h2>
+            <p class="cta-description">Join thousands of users who trust ZK-Mixer for their private transactions. Get started in minutes.</p>
+            <a href="index.html" class="btn-hero btn-hero-primary">Launch Application</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>🔐 ZK-Mixer</h3>
+                <p>Privacy-preserving anonymous transactions using Zero-Knowledge Proofs.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Product</h3>
+                <div class="footer-links">
+                    <a href="#features">Features</a>
+                    <a href="#how-it-works">How It Works</a>
+                    <a href="crypto-dashboard.html">Crypto Lab</a>
+                    <a href="crypto-flow.html">Documentation</a>
+                </div>
+            </div>
+            <div class="footer-section">
+                <h3>Resources</h3>
+                <div class="footer-links">
+                    <a href="docs-viewer.html?doc=README">Documentation</a>
+                    <a href="docs-viewer.html?doc=RESEARCH_PAPER">Research Paper</a>
+                    <a href="docs-viewer.html?doc=THREAT_MODEL">Security</a>
+                    <a href="docs-viewer.html?doc=CRYPTOGRAPHY_SPEC">Cryptography Spec</a>
+                </div>
+            </div>
+            <div class="footer-section">
+                <h3>Legal</h3>
+                <div class="footer-links">
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                    <a href="#">Disclaimer</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 ZK-Mixer. All rights reserved. Built with ❤️ for privacy.</p>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+    <script>
+        // Navbar scroll effect
+        window.addEventListener('scroll', () => {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Mobile menu toggle
+        function toggleMobileMenu() {
+            const navLinks = document.getElementById('navLinks');
+            navLinks.classList.toggle('active');
+        }
+
+        // Smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Animate stats on scroll
+        const observerOptions = {
+            threshold: 0.5,
+            rootMargin: '0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('fade-in');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.feature-card, .step, .stat-box').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Counter animation for stats
+        function animateCounter(element, target, duration = 2000) {
+            const start = 0;
+            const increment = target / (duration / 16);
+            let current = start;
+
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    element.textContent = target.toLocaleString();
+                    clearInterval(timer);
+                } else {
+                    element.textContent = Math.floor(current).toLocaleString();
+                }
+            }, 16);
+        }
+
+        // Trigger counter animations when stats section is visible
+        const statsObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !entry.target.dataset.animated) {
+                    entry.target.dataset.animated = 'true';
+                    const statBoxes = entry.target.querySelectorAll('.stat-box');
+                    // Animate only numeric stats
+                    const users = document.getElementById('totalUsers');
+                    const transactions = document.getElementById('totalTransactions');
+                    if (users) animateCounter(users, 1234);
+                    if (transactions) animateCounter(transactions, 5678);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        const statsSection = document.querySelector('.stats-section');
+        if (statsSection) {
+            statsObserver.observe(statsSection);
+        }
+
+        // Backend Connection Health Check
+        async function checkBackendConnection() {
+            const statusDiv = document.getElementById('connection-status');
+            const statusIcon = document.getElementById('status-icon');
+            const statusText = document.getElementById('status-text');
+            
+            if (!statusDiv) return;
+            
+            try {
+                const response = await fetch('http://localhost:8000/health', {
+                    method: 'GET',
+                    mode: 'cors',
+                    signal: AbortSignal.timeout(3000)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    statusDiv.style.background = 'rgba(76, 175, 80, 0.3)';
+                    statusDiv.style.border = '2px solid #4CAF50';
+                    statusIcon.textContent = '✓';
+                    statusText.textContent = 'Backend online & ready';
+                    statusText.style.color = '#4CAF50';
+                } else {
+                    throw new Error('Backend returned error');
+                }
+            } catch (error) {
+                statusDiv.style.background = 'rgba(244, 67, 54, 0.3)';
+                statusDiv.style.border = '2px solid #f44336';
+                statusIcon.textContent = '✗';
+                statusText.textContent = 'Backend offline - Run ./run.sh to start';
+                statusText.style.color = '#f44336';
+            }
+        }
+        
+        // Check backend immediately and every 5 seconds
+        checkBackendConnection();
+        setInterval(checkBackendConnection, 5000);
+    </script>
+</body>
+</html>
