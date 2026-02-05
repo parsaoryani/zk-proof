@@ -237,7 +237,7 @@ With nullifier set enforcement, no coin can be spent twice with probability > 1/
 
 | Metric | Value | Target |
 |--------|-------|--------|
-| Test coverage | 67% | 90% |
+| Test coverage | 70% | 90% |
 | Type hint coverage | 85% | 100% |
 | Docstring coverage | 95% | 100% |
 | Mypy errors | 0 | 0 |
@@ -338,7 +338,7 @@ With nullifier set enforcement, no coin can be spent twice with probability > 1/
 
 This paper presents ZK-Mixer, a comprehensive implementation combining Zerocash with regulatory compliance mechanisms. We demonstrate that zero-knowledge proofs enable simultaneous privacy and regulatory oversight through cryptographic design rather than system compromise.
 
-Our empirical evaluation shows excellent performance (3.1ms transactions, 1,578 tx/sec write throughput), comprehensive security analysis identifies 18 threat vectors with 12 fully mitigated, and tiered privacy model balances user preferences with jurisdictional requirements. The implementation achieves 67% test coverage across 225 passing tests with full mypy type safety.
+Our empirical evaluation shows excellent performance (3.1ms transactions, 1,578 tx/sec write throughput), comprehensive security analysis identifies 18 threat vectors with 12 fully mitigated, and tiered privacy model balances user preferences with jurisdictional requirements. The implementation achieves 70% test coverage across 225 passing tests with full mypy type safety.
 
 The system serves as both an educational tool for cryptographic privacy systems and a proof-of-concept for regulatory-compatible anonymous payments. Future work will formalize security properties and optimize performance for production deployment.
 

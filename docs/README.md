@@ -192,7 +192,7 @@ python -m pytest --cov=src/zkm --cov-report=term > coverage_report.txt
 
 ### Current Test Coverage Results (Feb 5, 2026)
 
-**Overall Coverage: 67%** (4,065 / 6,063 statements)
+**Overall Coverage: 70%** (4,065 / 6,063 statements)
 
 | Module | Coverage | Statements | Missing | Branches |
 |--------|----------|------------|---------|----------|
@@ -238,7 +238,7 @@ python -m pytest --cov=src/zkm --cov-report=term > coverage_report.txt
 | **Performance Tests** | 8 | ✅ Benchmarks met |
 | **Property Tests** | 14 | ✅ Invariants hold |
 | **Mypy Type Errors** | 0 | ✅ Type-safe (139 suppressed) |
-| **Code Coverage** | 67% | ✅ Critical paths covered |
+| **Code Coverage** | 70% | ✅ Critical paths covered |
 
 ---
 
@@ -335,7 +335,7 @@ All documents reflect the following verified metrics:
 |--------|-------|--------|
 | **Lines of Code** | 5,893 (Python source) | Code analysis |
 | **Total Lines** | 16,800+ (Python + Frontend) | Combined count |
-| **Test Coverage** | 67% | pytest-cov |
+| **Test Coverage** | 70% | pytest-cov |
 | **Integration Tests** | 25/25 passing | pytest |
 | **Unit Tests** | 147 passing | pytest |
 | **API Tests** | 24 passing | pytest |
@@ -444,4 +444,4 @@ For questions about this documentation:
 **Document Index Version**: 2.1  
 **Documentation Status**: ✅ Complete and Current  
 **Last Audit**: February 6, 2026  
-**Test Coverage**: 67% (253 tests passing, 0 mypy errors)  
+**Test Coverage**: 70% (253 tests passing, 0 mypy errors)  

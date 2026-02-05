@@ -94,7 +94,7 @@ This document provides a comprehensive threat model for the ZK-Mixer system impl
 
 | Threat | Description | Impact | Probability | Mitigation |
 |---|---|---|---|---|
-| **Invalid Proof Acceptance** | Faulty verification logic accepts invalid proofs | User withdraws without coin | Low | Comprehensive unit tests (147 unit + 25 integration tests, 67% coverage) |
+| **Invalid Proof Acceptance** | Faulty verification logic accepts invalid proofs | User withdraws without coin | Low | Comprehensive unit tests (147 unit + 25 integration tests, 70% coverage) |
 | **Tree Poisoning** | Attacker inserts special commitment to manipulate tree | Proof generation fails | Low | Commitments are hash outputs (uniform) |
 | **Proof Replay** | Use same proof multiple times | Double-spend | Low | **Merkle root updates prevent replay** |
 | **Merkle Root Desynchronization** | Different nodes see different roots | Inconsistent verification | Medium | Database transaction serialization |
@@ -280,7 +280,7 @@ This document provides a comprehensive threat model for the ZK-Mixer system impl
 - Nullifier set prevents duplicate nullifiers
 - First spend is recorded permanently
 - Second spend rejected at verification
-- **Test Coverage**: 67% overall, nullifier logic fully tested
+- **Test Coverage**: 70% overall, nullifier logic fully tested
 
 **Residual Risk**: Database transaction consistency required.
 
@@ -382,7 +382,7 @@ This document provides a comprehensive threat model for the ZK-Mixer system impl
 
 ### 5.3 Implementation Assumptions
 
-1. **Merkle tree implementation is correct**: 67% test coverage, 225 tests passing ✅
+1. **Merkle tree implementation is correct**: 70% test coverage, 225 tests passing ✅
 2. **zk-SNARK implementation is secure**: Simplified circuit (educational)
 3. **Nullifier set is tamper-proof**: Database transaction isolation required
 4. **No timing side-channels exist**: NOT ASSUMED (implementation is vulnerable)
@@ -456,7 +456,7 @@ This document provides a comprehensive threat model for the ZK-Mixer system impl
 - ✅ Unlinkability properties demonstrated
 - ✅ Regulatory compliance features included
 - ✅ Type safety enforced (mypy passing with strategic error suppression)
-- ✅ 67% test coverage across all modules
+- ✅ 70% test coverage across all modules
 - ✅ Performance validated (3.1ms transactions, 1,578 tx/sec)
 
 **Weaknesses**:
@@ -484,7 +484,7 @@ This document provides a comprehensive threat model for the ZK-Mixer system impl
 
 **Code Quality Improvements**:
 - ✅ Achieved full mypy type safety compliance (0 errors)
-- ✅ Expanded test coverage to 225 comprehensive tests (67% coverage)
+- ✅ Expanded test coverage to 225 comprehensive tests (70% coverage)
 - ✅ Fixed all duplicate exception definitions
 - ✅ Enhanced type annotations for security-critical cryptographic operations
 
