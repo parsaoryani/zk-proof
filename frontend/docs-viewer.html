@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation - ZK Mixer</title>
+    <link rel="stylesheet" href="app.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .doc-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px 80px;
+        }
+
+        .doc-header {
+            text-align: center;
+            margin-bottom: 50px;
+            padding: 40px 30px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            border: 2px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .doc-header h1 {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .doc-header p {
+            font-size: 1.2rem;
+            color: #666;
+            line-height: 1.6;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .doc-content {
+            background: white;
+            padding: 50px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            line-height: 1.9;
+            color: #333;
+            border: 2px solid rgba(102, 126, 234, 0.1);
+        }
+
+        .doc-content h1,
+        .doc-content h2,
+        .doc-content h3,
+        .doc-content h4 {
+            margin-top: 2.5rem;
+            margin-bottom: 1.2rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .doc-content h1 {
+            font-size: 2.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 3px solid #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-top: 3rem;
+        }
+
+        .doc-content h2 {
+            font-size: 2rem;
+            color: #667eea;
+            padding-left: 15px;
+            border-left: 4px solid #667eea;
+            margin-top: 3rem;
+        }
+
+        .doc-content h3 {
+            font-size: 1.5rem;
+            color: #764ba2;
+            margin-top: 2rem;
+        }
+
+        .doc-content h4 {
+            font-size: 1.2rem;
+            color: #555;
+        }
+
+        .doc-content p {
+            margin-bottom: 1.5rem;
+            font-size: 1.05rem;
+            color: #444;
+        }
+
+        .doc-content ul,
+        .doc-content ol {
+            margin-bottom: 1.5rem;
+            padding-left: 2.5rem;
+        }
+
+        .doc-content li {
+            margin-bottom: 0.8rem;
+            line-height: 1.8;
+        }
+
+        .doc-content ul li::marker {
+            color: #667eea;
+        }
+
+        .doc-content ol li::marker {
+            color: #667eea;
+            font-weight: 700;
+        }
+
+        .doc-content code {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 0.3rem 0.6rem;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            font-size: 0.92em;
+            color: #764ba2;
+            border: 1px solid rgba(118, 75, 162, 0.2);
+            font-weight: 600;
+        }
+
+        .doc-content pre {
+            background: linear-gradient(135deg, #2d3436 0%, #000000 100%);
+            padding: 2rem;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 2rem 0;
+            border: 2px solid #667eea;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .doc-content pre code {
+            background: none;
+            padding: 0;
+            border-radius: 0;
+            color: #a8e6cf;
+            border: none;
+            font-weight: 400;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .doc-content blockquote {
+            border-left: 5px solid #667eea;
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.05) 0%, transparent 100%);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            color: #555;
+            font-style: italic;
+            border-radius: 0 12px 12px 0;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
+        }
+
+        .doc-content blockquote p:last-child {
+            margin-bottom: 0;
+        }
+
+        .doc-content table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 2rem 0;
+            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 2px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .doc-content table th,
+        .doc-content table td {
+            padding: 16px 20px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .doc-content table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-weight: 700;
+            color: white;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        .doc-content table tbody tr {
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .doc-content table tbody tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .doc-content table tbody tr:hover {
+            background: rgba(102, 126, 234, 0.1);
+            transform: scale(1.01);
+        }
+
+        .doc-content table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .doc-content a {
+            color: #667eea;
+            text-decoration: none;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .doc-content a:hover {
+            border-bottom-color: #667eea;
+            color: #764ba2;
+        }
+
+        .doc-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 12px;
+            margin: 2rem 0;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border: 3px solid rgba(102, 126, 234, 0.3);
+        }
+
+        .doc-content hr {
+            border: none;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #667eea, transparent);
+            margin: 3rem 0;
+        }
+
+        .back-button {
+            margin-bottom: 30px;
+        }
+
+        .back-button .btn {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            padding: 12px 24px;
+            font-weight: 600;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .back-button .btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        .error-message {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            border: 2px solid #ff5252;
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 20px 0;
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.3);
+            font-weight: 600;
+        }
+
+        .doc-meta {
+            display: flex;
+            gap: 25px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .doc-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(102, 126, 234, 0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: #667eea;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+        }
+
+        .toc {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            margin-bottom: 40px;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .toc h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .toc ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .toc ul ul {
+            padding-left: 25px;
+            margin-top: 10px;
+        }
+
+        .toc li {
+            margin-bottom: 10px;
+        }
+
+        .toc a {
+            color: #555;
+            text-decoration: none;
+            display: block;
+            padding: 8px 12px;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .toc a:hover {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            padding-left: 20px;
+        }
+
+        .toc ul ul a {
+            font-size: 0.95rem;
+        }
+
+        /* Copy button styling */
+        .copy-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .copy-btn:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .copy-btn.copied {
+            background: #51cf66;
+        }
+
+        /* Smooth scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Strong and emphasis */
+        .doc-content strong {
+            color: #667eea;
+            font-weight: 700;
+        }
+
+        .doc-content em {
+            color: #764ba2;
+        }
+
+        /* Dark theme support */
+        [data-theme="dark"] body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        }
+
+        [data-theme="dark"] .doc-header,
+        [data-theme="dark"] .doc-content,
+        [data-theme="dark"] .toc {
+            background: #0f3460;
+            color: #e8e8e8;
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+
+        [data-theme="dark"] .doc-header p,
+        [data-theme="dark"] .doc-content p,
+        [data-theme="dark"] .doc-content li {
+            color: #ccc;
+        }
+
+        [data-theme="dark"] .doc-content h2 {
+            color: #a8d8ff;
+        }
+
+        [data-theme="dark"] .doc-content h3 {
+            color: #c9a7eb;
+        }
+
+        [data-theme="dark"] .doc-content code {
+            background: rgba(102, 126, 234, 0.2);
+            color: #a8d8ff;
+        }
+
+        [data-theme="dark"] .toc a {
+            color: #ccc;
+        }
+
+        [data-theme="dark"] .back-button .btn {
+            background: #0f3460;
+            color: #a8d8ff;
+            border-color: #667eea;
+        }
+
+        [data-theme="dark"] .back-button .btn:hover {
+            background: #667eea;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <a href="index.html">🔐 ZK Mixer</a>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="app.html">App</a>
+                <a href="dashboard.html">Dashboard</a>
+                <a href="database.html">Database</a>
+            </div>
+            <div class="nav-actions">
+                <button id="themeToggle" class="btn btn-secondary btn-icon">🌓</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="doc-container">
+            <div class="back-button">
+                <a href="index.html" class="btn btn-secondary">← Back to Home</a>
+            </div>
+
+            <div class="doc-header">
+                <h1 id="docTitle">Loading...</h1>
+                <p id="docSubtitle"></p>
+                <div class="doc-meta" id="docMeta"></div>
+            </div>
+
+            <div id="tocContainer"></div>
+
+            <div id="loading" class="loading">Loading documentation</div>
+            <div id="error" class="error-message" style="display: none;"></div>
+            <div id="content" class="doc-content"></div>
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+    <script>
+        // Get document type from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const docType = urlParams.get('doc') || 'README';
+
+        // Document configurations
+        const docs = {
+            'README': {
+                path: 'docs/README.md',
+                title: '📚 Documentation',
+                subtitle: 'Comprehensive guide to ZK-Mixer implementation and usage',
+                icon: '📚'
+            },
+            'RESEARCH_PAPER': {
+                path: 'docs/RESEARCH_PAPER.md',
+                title: '🔬 Research Paper',
+                subtitle: 'Academic analysis of privacy-preserving cryptocurrency mixing',
+                icon: '🔬'
+            },
+            'THREAT_MODEL': {
+                path: 'docs/THREAT_MODEL.md',
+                title: '🛡️ Security & Threat Model',
+                subtitle: 'Security analysis and threat mitigation strategies',
+                icon: '🛡️'
+            },
+            'CRYPTOGRAPHY_SPEC': {
+                path: 'docs/CRYPTOGRAPHY_SPEC.md',
+                title: '🔐 Cryptography Specification',
+                subtitle: 'Technical specification of cryptographic primitives',
+                icon: '🔐'
+            }
+        };
+
+        const config = docs[docType];
+
+        if (!config) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').textContent = 'Invalid document type';
+            document.getElementById('error').style.display = 'block';
+        } else {
+            // Set title
+            document.getElementById('docTitle').textContent = config.title;
+            document.getElementById('docSubtitle').textContent = config.subtitle;
+            document.title = `${config.title} - ZK Mixer`;
+
+            // Load and render markdown
+            fetch(config.path)
+                .then(response => {
+                    console.log('Fetch response status:', response.status, 'for path:', config.path);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.text();
+                })
+                .then(markdown => {
+                    console.log('Markdown loaded successfully, length:', markdown.length);
+                    // Configure marked
+                    marked.setOptions({
+                        breaks: true,
+                        gfm: true,
+                        headerIds: true
+                    });
+
+                    // Render markdown
+                    const html = marked.parse(markdown);
+                    document.getElementById('content').innerHTML = html;
+                    document.getElementById('loading').style.display = 'none';
+
+                    // Generate table of contents
+                    generateTOC();
+
+                    // Add copy buttons to code blocks
+                    addCopyButtons();
+
+                    // Smooth scroll to anchor if present
+                    if (window.location.hash) {
+                        setTimeout(() => {
+                            const element = document.querySelector(window.location.hash);
+                            if (element) {
+                                element.scrollIntoView({ behavior: 'smooth' });
+                            }
+                        }, 100);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading documentation:', error);
+                    document.getElementById('loading').style.display = 'none';
+                    const errorEl = document.getElementById('error');
+                    errorEl.innerHTML = `
+                        <strong>⚠️ Failed to load documentation</strong><br><br>
+                        Error: ${error.message}<br>
+                        Path: ${config.path}<br><br>
+                        <em>Make sure you're running the frontend server (python3 -m http.server 8080) from the frontend directory.</em>
+                    `;
+                    errorEl.style.display = 'block';
+                });
+        }
+
+        // Generate table of contents
+        function generateTOC() {
+            const content = document.getElementById('content');
+            const headings = content.querySelectorAll('h1, h2, h3');
+            
+            if (headings.length === 0) return;
+
+            const toc = document.createElement('div');
+            toc.className = 'toc';
+            toc.innerHTML = '<h3>📑 Table of Contents</h3>';
+            
+            const ul = document.createElement('ul');
+            let currentLevel = 1;
+            let currentUl = ul;
+            const stack = [ul];
+
+            headings.forEach((heading, index) => {
+                const level = parseInt(heading.tagName[1]);
+                const text = heading.textContent;
+                const id = heading.id || `heading-${index}`;
+                
+                if (!heading.id) {
+                    heading.id = id;
+                }
+
+                // Adjust nesting
+                while (level > currentLevel && currentLevel < 3) {
+                    const newUl = document.createElement('ul');
+                    currentUl.lastElementChild?.appendChild(newUl);
+                    stack.push(newUl);
+                    currentUl = newUl;
+                    currentLevel++;
+                }
+                
+                while (level < currentLevel) {
+                    stack.pop();
+                    currentUl = stack[stack.length - 1];
+                    currentLevel--;
+                }
+
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.href = `#${id}`;
+                a.textContent = text;
+                li.appendChild(a);
+                currentUl.appendChild(li);
+            });
+
+            toc.appendChild(ul);
+            document.getElementById('tocContainer').appendChild(toc);
+
+            // Smooth scroll for TOC links
+            toc.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const target = document.querySelector(link.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth' });
+                        history.pushState(null, null, link.getAttribute('href'));
+                    }
+                });
+            });
+        }
+
+        // Add copy buttons to code blocks
+        function addCopyButtons() {
+            const codeBlocks = document.querySelectorAll('pre code');
+            codeBlocks.forEach(block => {
+                const pre = block.parentElement;
+                pre.style.position = 'relative';
+
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = '📋 Copy';
+
+                button.addEventListener('click', () => {
+                    const code = block.textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = '✓ Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = '📋 Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    });
+                });
+
+                pre.appendChild(button);
+            });
+        }
+
+        // Theme toggle
+        document.getElementById('themeToggle')?.addEventListener('click', () => {
+            window.themeManager?.toggle();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Admin - ZK Mixer</title>
+    <link rel="stylesheet" href="app.css">
+    <script src="app.js" defer></script>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <a href="index.html">🔐 ZK Mixer</a>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="app.html">App</a>
+                <a href="dashboard.html">Dashboard</a>
+                <a href="database.html" class="active">Database</a>
+            </div>
+            <div class="nav-actions">
+                <button id="themeToggle" class="btn btn-secondary btn-icon">🌓</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <div class="section-header">
+                <h2>📊 Database Administration</h2>
+                <p>View and manage database tables</p>
+            </div>
+
+            <!-- Table Selector -->
+            <div class="card mb-3">
+                <div class="form-group">
+                    <label class="form-label">Select Table</label>
+                    <select id="tableSelect" class="form-control">
+                        <option value="">-- Select a table --</option>
+                        <option value="users">Users</option>
+                        <option value="sessions">Sessions</option>
+                        <option value="transactions">Transactions</option>
+                        <option value="commitments">Commitments</option>
+                        <option value="nullifiers">Nullifiers</option>
+                        <option value="merkle_roots">Merkle Roots</option>
+                        <option value="mixer_statistics">Mixer Statistics</option>
+                        <option value="audit_records">Audit Records</option>
+                    </select>
+                </div>
+                <div class="section-actions mt-2">
+                    <button id="loadTableBtn" class="btn btn-primary">Load Table</button>
+                    <button id="refreshBtn" class="btn btn-secondary">🔄 Refresh</button>
+                    <button id="exportBtn" class="btn btn-outline">📥 Export CSV</button>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div id="statsGrid" class="stats-grid" style="display: none;">
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-content">
+                        <div class="stat-label">Total Rows</div>
+                        <div class="stat-value" id="totalRows">0</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📋</div>
+                    <div class="stat-content">
+                        <div class="stat-label">Columns</div>
+                        <div class="stat-value" id="totalColumns">0</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🗂️</div>
+                    <div class="stat-content">
+                        <div class="stat-label">Current Table</div>
+                        <div class="stat-value" id="currentTable">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Custom Query Section -->
+            <div class="card mt-3">
+                <h3 class="mb-2">🔍 Custom SQL Query (Read-Only)</h3>
+                <div class="form-group">
+                    <label class="form-label">SQL Query</label>
+                    <textarea 
+                        id="sqlQuery" 
+                        class="form-control" 
+                        rows="4" 
+                        placeholder="SELECT * FROM users LIMIT 10"
+                    ></textarea>
+                </div>
+                <button id="executeQueryBtn" class="btn btn-primary">Execute Query</button>
+            </div>
+
+            <!-- Results Table -->
+            <div id="resultsContainer" class="card mt-3" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 id="resultsTitle">Query Results</h3>
+                    <div>
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            class="form-control" 
+                            placeholder="🔍 Search..." 
+                            style="width: 300px; display: inline-block;"
+                        >
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead id="tableHead"></thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+
+                <div id="paginationContainer" class="mt-3" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div id="paginationInfo" class="text-secondary"></div>
+                    <div id="paginationControls"></div>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="card text-center" style="padding: 60px 20px;">
+                <div style="font-size: 4rem; margin-bottom: 20px;">🗄️</div>
+                <h3 style="color: var(--text-secondary); margin-bottom: 10px;">No Data Loaded</h3>
+                <p style="color: var(--text-secondary);">Select a table or execute a query to view data</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_PORT = 8000;
+        const API_BASE = `http://${window.location.hostname}:${API_PORT}`;
+        
+        let currentData = [];
+        let filteredData = [];
+        let currentPage = 1;
+        const itemsPerPage = 50;
+
+        // Use global instances from app.js
+        let themeManager, toastManager;
+        
+        // Elements (will be initialized on DOM ready)
+        let tableSelect, loadTableBtn, refreshBtn, exportBtn;
+        let executeQueryBtn, sqlQuery, resultsContainer;
+        let emptyState, statsGrid, searchInput;
+
+        // Load table data
+        async function loadTable() {
+            const tableName = tableSelect.value;
+            if (!tableName) {
+                toastManager?.warning('Please select a table');
+                return;
+            }
+
+            const query = `SELECT * FROM ${tableName} LIMIT 1000`;
+            await executeQuery(query, tableName);
+        }
+
+        // Execute custom query
+        async function executeCustomQuery() {
+            const query = sqlQuery.value.trim();
+            if (!query) {
+                toastManager?.warning('Please enter a SQL query');
+                return;
+            }
+
+            // Simple validation - only allow SELECT queries
+            if (!query.toLowerCase().startsWith('select')) {
+                toastManager?.error('Only SELECT queries are allowed');
+                return;
+            }
+
+            await executeQuery(query, 'Custom Query');
+        }
+
+        // Execute query
+        async function executeQuery(query, title) {
+            try {
+                toastManager?.info('Executing query...');
+                
+                const response = await fetch(`${API_BASE}/database/query`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Query execution failed');
+                }
+
+                const data = await response.json();
+                currentData = data.results || [];
+                filteredData = [...currentData];
+                
+                displayResults(title);
+                updateStats(title, currentData.length);
+                toastManager?.success(`Loaded ${currentData.length} rows`);
+            } catch (error) {
+                console.error('Query error:', error);
+                toastManager?.error('Failed to execute query. Make sure the backend is running.');
+            }
+        }
+
+        // Display results
+        function displayResults(title) {
+            if (currentData.length === 0) {
+                resultsContainer.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            resultsContainer.style.display = 'block';
+            emptyState.style.display = 'none';
+            document.getElementById('resultsTitle').textContent = title;
+
+            // Get columns
+            const columns = Object.keys(currentData[0]);
+            
+            // Create table header
+            const thead = document.getElementById('tableHead');
+            thead.innerHTML = `
+                <tr>
+                    <th>#</th>
+                    ${columns.map(col => `<th>${col}</th>`).join('')}
+                </tr>
+            `;
+
+            // Paginate data
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageData = filteredData.slice(startIndex, endIndex);
+
+            // Create table body
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = pageData.map((row, index) => `
+                <tr>
+                    <td>${startIndex + index + 1}</td>
+                    ${columns.map(col => {
+                        let value = row[col];
+                        if (value === null) value = '<span class="text-secondary">NULL</span>';
+                        else if (typeof value === 'string' && value.length > 100) 
+                            value = `<span class="mono" title="${value}">${value.substring(0, 100)}...</span>`;
+                        else if (typeof value === 'string' && value.length > 20)
+                            value = `<span class="mono">${value}</span>`;
+                        return `<td>${value}</td>`;
+                    }).join('')}
+                </tr>
+            `).join('');
+
+            // Update pagination
+            updatePagination();
+        }
+
+        // Update stats
+        function updateStats(tableName, rowCount) {
+            statsGrid.style.display = 'grid';
+            document.getElementById('totalRows').textContent = rowCount;
+            document.getElementById('totalColumns').textContent = currentData.length > 0 ? Object.keys(currentData[0]).length : 0;
+            document.getElementById('currentTable').textContent = tableName;
+        }
+
+        // Update pagination
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage + 1;
+            const endIndex = Math.min(currentPage * itemsPerPage, filteredData.length);
+
+            document.getElementById('paginationInfo').textContent = 
+                `Showing ${startIndex}-${endIndex} of ${filteredData.length} rows`;
+
+            const controls = document.getElementById('paginationControls');
+            controls.innerHTML = `
+                <button class="btn btn-sm btn-secondary" ${currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})">
+                    ← Previous
+                </button>
+                <span style="margin: 0 15px; font-weight: 600;">Page ${currentPage} of ${totalPages}</span>
+                <button class="btn btn-sm btn-secondary" ${currentPage === totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})">
+                    Next →
+                </button>
+            `;
+        }
+
+        // Go to page
+        function goToPage(page) {
+            currentPage = page;
+            displayResults(document.getElementById('resultsTitle').textContent);
+        }
+
+        // Export to CSV
+        function exportCSV() {
+            if (currentData.length === 0) {
+                toastManager?.warning('No data to export');
+                return;
+            }
+
+            const columns = Object.keys(currentData[0]);
+            const csv = [
+                columns.join(','),
+                ...currentData.map(row => 
+                    columns.map(col => {
+                        let value = row[col];
+                        if (value === null) return '';
+                        if (typeof value === 'string' && value.includes(',')) 
+                            return `"${value.replace(/"/g, '""')}"`;
+                        return value;
+                    }).join(',')
+                )
+            ].join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${tableSelect.value || 'query'}_${Date.now()}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            toastManager?.success('Data exported successfully');
+        }
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get global instances from app.js
+            themeManager = window.themeManager;
+            toastManager = window.toast;
+            
+            // Get DOM elements
+            tableSelect = document.getElementById('tableSelect');
+            loadTableBtn = document.getElementById('loadTableBtn');
+            refreshBtn = document.getElementById('refreshBtn');
+            exportBtn = document.getElementById('exportBtn');
+            executeQueryBtn = document.getElementById('executeQueryBtn');
+            sqlQuery = document.getElementById('sqlQuery');
+            resultsContainer = document.getElementById('resultsContainer');
+            emptyState = document.getElementById('emptyState');
+            statsGrid = document.getElementById('statsGrid');
+            searchInput = document.getElementById('searchInput');
+            
+            // Set up theme toggle
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) {
+                themeToggle.addEventListener('click', () => {
+                    themeManager?.toggle();
+                });
+            }
+
+            // Event listeners
+            loadTableBtn.addEventListener('click', loadTable);
+            refreshBtn.addEventListener('click', () => {
+                if (tableSelect.value) loadTable();
+                else if (sqlQuery.value) executeCustomQuery();
+            });
+            executeQueryBtn.addEventListener('click', executeCustomQuery);
+            exportBtn.addEventListener('click', exportCSV);
+
+            // Search functionality
+            searchInput.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                
+                if (searchTerm === '') {
+                    filteredData = [...currentData];
+                } else {
+                    filteredData = currentData.filter(row => {
+                        return Object.values(row).some(value => 
+                            String(value).toLowerCase().includes(searchTerm)
+                        );
+                    });
+                }
+                
+                currentPage = 1;
+                displayResults(document.getElementById('resultsTitle').textContent);
+            });
+
+            // Load on Enter
+            sqlQuery.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                    executeCustomQuery();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZK-Mixer Dashboard - Privacy-Preserving Transactions</title>
+    <link rel="stylesheet" href="app.css">
+    <style>
+        /* Dashboard Specific Styles */
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .dashboard-header {
+            background: white;
+            border-radius: var(--border-radius-md);
+            padding: var(--spacing-xl);
+            margin-bottom: var(--spacing-lg);
+            box-shadow: var(--card-shadow);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: var(--spacing-md);
+        }
+
+        .header-title h1 {
+            color: var(--primary-color);
+            margin-bottom: 8px;
+            font-size: 2rem;
+        }
+
+        .header-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .user-role {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: var(--border-radius-md);
+            padding: var(--spacing-lg);
+            box-shadow: var(--card-shadow);
+            transition: all var(--transition-normal);
+            border-left: 4px solid transparent;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--card-shadow-hover);
+        }
+
+        .stat-card.primary { border-left-color: var(--primary-color); }
+        .stat-card.success { border-left-color: var(--success-color); }
+        .stat-card.warning { border-left-color: var(--warning-color); }
+        .stat-card.info { border-left-color: var(--info-color); }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--border-radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .stat-icon.primary { background: rgba(102, 126, 234, 0.1); }
+        .stat-icon.success { background: rgba(16, 185, 129, 0.1); }
+        .stat-icon.warning { background: rgba(245, 158, 11, 0.1); }
+        .stat-icon.info { background: rgba(59, 130, 246, 0.1); }
+
+        .stat-title {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .stat-change {
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .stat-change.positive { color: var(--success-color); }
+        .stat-change.negative { color: var(--error-color); }
+
+        /* Activity Feed */
+        .activity-card {
+            background: white;
+            border-radius: var(--border-radius-md);
+            padding: var(--spacing-lg);
+            box-shadow: var(--card-shadow);
+        }
+
+        .activity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-md);
+            padding-bottom: var(--spacing-md);
+            border-bottom: 2px solid #f3f4f6;
+        }
+
+        .activity-header h2 {
+            color: var(--text-primary);
+            font-size: 1.25rem;
+            margin: 0;
+        }
+
+        .activity-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .activity-item {
+            padding: var(--spacing-md);
+            border-left: 3px solid #e5e7eb;
+            margin-bottom: var(--spacing-md);
+            border-radius: var(--border-radius-sm);
+            background: #f9fafb;
+            transition: all var(--transition-fast);
+        }
+
+        .activity-item:hover {
+            border-left-color: var(--primary-color);
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .activity-item.deposit { border-left-color: var(--success-color); }
+        .activity-item.withdraw { border-left-color: var(--warning-color); }
+        .activity-item.proof { border-left-color: var(--info-color); }
+
+        .activity-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .activity-type {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .activity-time {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .activity-details {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .activity-hash {
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: var(--primary-color);
+            background: #f3f4f6;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .activity-hash:hover {
+            background: #e5e7eb;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            background: white;
+            border-radius: var(--border-radius-md);
+            padding: var(--spacing-lg);
+            box-shadow: var(--card-shadow);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .quick-actions h2 {
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-md);
+            font-size: 1.25rem;
+        }
+
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-md);
+        }
+
+        .action-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-lg);
+            border: 2px solid #e5e7eb;
+            border-radius: var(--border-radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .action-button:hover {
+            border-color: var(--primary-color);
+            background: rgba(102, 126, 234, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .action-icon {
+            font-size: 32px;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: var(--bg-gradient);
+            color: white;
+        }
+
+        .action-title {
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .action-description {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        /* Charts */
+        .chart-card {
+            background: white;
+            border-radius: var(--border-radius-md);
+            padding: var(--spacing-lg);
+            box-shadow: var(--card-shadow);
+        }
+
+        .chart-header {
+            margin-bottom: var(--spacing-md);
+        }
+
+        .chart-title {
+            color: var(--text-primary);
+            font-size: 1.25rem;
+            margin-bottom: 4px;
+        }
+
+        .chart-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .chart-container {
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .stat-value {
+                font-size: 1.5rem;
+            }
+
+            .actions-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-xl);
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: var(--spacing-md);
+            opacity: 0.5;
+        }
+
+        /* Health Indicator */
+        .health-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .health-status.healthy {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+        }
+
+        .health-status.unhealthy {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error-color);
+        }
+
+        .health-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <!-- Toast Container (managed by app.js) -->
+    
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="dashboard-header fade-in">
+            <div class="header-content">
+                <div class="header-title">
+                    <h1>🔐 ZK-Mixer Dashboard</h1>
+                    <p class="header-subtitle">Privacy-Preserving Anonymous Transactions</p>
+                </div>
+                <div class="header-actions">
+                    <div class="health-status healthy" id="healthStatus">
+                        <span class="health-dot"></span>
+                        <span>System Healthy</span>
+                    </div>
+                    <div class="user-profile">
+                        <div class="user-avatar" id="userAvatar">U</div>
+                        <div class="user-details">
+                            <span class="user-name" id="userName">Guest User</span>
+                            <span class="user-role" id="userRole">Member</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card primary fade-in">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-title">Total Balance</div>
+                        <div class="stat-value" id="totalBalance">0.00</div>
+                        <div class="stat-change positive">
+                            <span>↑</span>
+                            <span>Updated just now</span>
+                        </div>
+                    </div>
+                    <div class="stat-icon primary">💰</div>
+                </div>
+            </div>
+
+            <div class="stat-card success fade-in" style="animation-delay: 0.1s">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-title">Total Deposits</div>
+                        <div class="stat-value" id="totalDeposits">0</div>
+                        <div class="stat-change positive">
+                            <span>↑</span>
+                            <span id="depositChange">+0 this week</span>
+                        </div>
+                    </div>
+                    <div class="stat-icon success">📥</div>
+                </div>
+            </div>
+
+            <div class="stat-card warning fade-in" style="animation-delay: 0.2s">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-title">Total Withdrawals</div>
+                        <div class="stat-value" id="totalWithdrawals">0</div>
+                        <div class="stat-change">
+                            <span>↓</span>
+                            <span id="withdrawalChange">+0 this week</span>
+                        </div>
+                    </div>
+                    <div class="stat-icon warning">📤</div>
+                </div>
+            </div>
+
+            <div class="stat-card info fade-in" style="animation-delay: 0.3s">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-title">Active Transactions</div>
+                        <div class="stat-value" id="activeTransactions">0</div>
+                        <div class="stat-change">
+                            <span>⚡</span>
+                            <span>Real-time</span>
+                        </div>
+                    </div>
+                    <div class="stat-icon info">🔄</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions fade-in" style="animation-delay: 0.4s">
+            <h2>Quick Actions</h2>
+            <div class="actions-grid">
+                <a href="#" class="action-button" onclick="openDepositModal(); return false;">
+                    <div class="action-icon">📥</div>
+                    <div class="action-title">Deposit Funds</div>
+                    <div class="action-description">Make an anonymous deposit</div>
+                </a>
+                <a href="#" class="action-button" onclick="openWithdrawModal(); return false;">
+                    <div class="action-icon">📤</div>
+                    <div class="action-title">Withdraw Funds</div>
+                    <div class="action-description">Withdraw anonymously</div>
+                </a>
+                <a href="#" class="action-button" onclick="openProofModal(); return false;">
+                    <div class="action-icon">🔐</div>
+                    <div class="action-title">Verify Proof</div>
+                    <div class="action-description">Verify ZK proof</div>
+                </a>
+                <a href="crypto-dashboard.html" class="action-button">
+                    <div class="action-icon">🔬</div>
+                    <div class="action-title">Crypto Lab</div>
+                    <div class="action-description">Test cryptographic functions</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Grid Layout for Activity and Charts -->
+        <div class="grid grid-cols-2" style="margin-top: var(--spacing-lg);">
+            <!-- Recent Activity -->
+            <div class="activity-card fade-in" style="animation-delay: 0.5s">
+                <div class="activity-header">
+                    <h2>Recent Activity</h2>
+                    <button class="btn btn-sm btn-outline" onclick="refreshActivity()">
+                        <span id="refreshIcon">🔄</span>
+                        Refresh
+                    </button>
+                </div>
+                <div class="activity-list" id="activityList">
+                    <div class="empty-state">
+                        <div class="empty-icon">📋</div>
+                        <p>No recent activity</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transaction Volume Chart -->
+            <div class="chart-card fade-in" style="animation-delay: 0.6s">
+                <div class="chart-header">
+                    <h3 class="chart-title">Transaction Volume</h3>
+                    <p class="chart-subtitle">Last 7 days</p>
+                </div>
+                <div class="chart-container" id="volumeChart">
+                    <p>📊 Chart visualization coming soon</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals (simplified) -->
+    <div id="depositModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Make a Deposit</h2>
+                <button class="modal-close" onclick="ModalManager.hide('depositModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Amount</label>
+                    <input type="number" id="depositAmount" placeholder="Enter amount" min="0.01" step="0.01">
+                </div>
+            </div>
+            <div class="flex gap-2" style="justify-content: flex-end; margin-top: var(--spacing-md);">
+                <button class="btn btn-secondary" onclick="ModalManager.hide('depositModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="makeDeposit()">Deposit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+    <script>
+        // Configuration
+        const API_PORT = localStorage.getItem('API_PORT') || '8000';
+        const API_BASE = `${window.location.protocol}//${window.location.hostname}:${API_PORT}`;
+        let authToken = StorageHelper.get('authToken');
+        let currentUser = StorageHelper.get('currentUser');
+
+        // Check authentication
+        if (!authToken || !currentUser) {
+            window.location.href = 'index.html';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Set user info
+            const userName = document.getElementById('userName');
+            const userAvatar = document.getElementById('userAvatar');
+            const userRole = document.getElementById('userRole');
+            
+            if (currentUser) {
+                userName.textContent = currentUser.username || 'User';
+                userAvatar.textContent = (currentUser.username || 'U')[0].toUpperCase();
+                userRole.textContent = currentUser.is_admin ? 'Administrator' : 'Member';
+            }
+
+            // Load initial data
+            await Promise.all([
+                loadStats(),
+                loadActivity(),
+                checkHealth()
+            ]);
+
+            // Set up auto-refresh
+            setInterval(() => {
+                loadStats();
+                loadActivity();
+            }, 10000); // Every 10 seconds
+
+            setInterval(checkHealth, 30000); // Every 30 seconds
+
+            toast.success('Dashboard loaded successfully!');
+        });
+
+        // API Functions
+        async function loadStats() {
+            try {
+                let response = await fetch(`${API_BASE}/stats`, {
+                    headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
+                });
+                
+                if (!response.ok) {
+                    // Fallback to /statistics endpoint if /stats not available
+                    response = await fetch(`${API_BASE}/statistics`);
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                document.getElementById('totalBalance').textContent = formatCurrency(data.total_balance || data.total_volume || 0);
+                document.getElementById('totalDeposits').textContent = data.total_deposits || 0;
+                document.getElementById('totalWithdrawals').textContent = data.total_withdrawals || 0;
+                document.getElementById('activeTransactions').textContent = data.active_transactions || data.num_commitments || 0;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                showError('Unable to load statistics. Please check if backend is running.');
+            }
+        }
+
+        async function loadActivity() {
+            try {
+                let response;
+                if (authToken) {
+                    response = await fetch(`${API_BASE}/transactions/my`, {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    });
+                }
+                
+                if (!response || !response.ok) {
+                    // Fallback to public /transactions endpoint
+                    response = await fetch(`${API_BASE}/transactions?limit=10`);
+                    if (!fallbackResponse.ok) throw new Error('Failed to load activity');
+                    const data = await fallbackResponse.json();
+                    const transactions = data.transactions || [];
+                    updateActivityList(transactions);
+                    return;
+                }
+                
+                const transactions = await response.json();
+                updateActivityList(transactions);
+            } catch (error) {
+                console.error('Error loading activity:', error);
+            }
+        }
+        
+        function updateActivityList(transactions) {
+            const activityList = document.getElementById('activityList');
+            
+            if (!transactions || transactions.length === 0) {
+                activityList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📋</div>
+                        <p>No recent activity</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            activityList.innerHTML = transactions.slice(0, 10).map(tx => {
+                const type = tx.type || tx.tx_type || 'transaction';
+                const time = formatRelativeTime(tx.timestamp || new Date());
+                const hash = truncateHash(tx.transaction_hash || tx.tx_hash || tx.id || 'unknown');
+                
+                return `
+                    <div class="activity-item ${type} slide-in-right">
+                        <div class="activity-meta">
+                            <span class="activity-type">${type.charAt(0).toUpperCase() + type.slice(1)}</span>
+                            <span class="activity-time">${time}</span>
+                        </div>
+                        <div class="activity-details">
+                            ${tx.amount ? `Amount: ${formatCurrency(tx.amount)}` : 'Proof verification'}
+                        </div>
+                        <span class="activity-hash" onclick="copyToClipboard('${tx.transaction_hash || tx.tx_hash || tx.id}')" title="Click to copy">
+                            ${hash}
+                        </span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(3000) });
+                const data = await response.json();
+                
+                const healthStatus = document.getElementById('healthStatus');
+                if (response.ok && data.status === 'operational') {
+                    healthStatus.className = 'health-status healthy';
+                    healthStatus.innerHTML = '<span class="health-dot"></span><span>System Operational</span>';
+                } else {
+                    healthStatus.className = 'health-status unhealthy';
+                    healthStatus.innerHTML = '<span class="health-dot"></span><span>System Issues</span>';
+                }
+            } catch (error) {
+                console.error('Health check failed:', error);
+                const healthStatus = document.getElementById('healthStatus');
+                healthStatus.className = 'health-status unhealthy';
+                healthStatus.innerHTML = '<span class="health-dot"></span><span>Offline</span>';
+            }
+        }
+
+        function refreshActivity() {
+            const icon = document.getElementById('refreshIcon');
+            icon.style.animation = 'spin 1s linear';
+            loadActivity().then(() => {
+                setTimeout(() => icon.style.animation = '', 1000);
+                toast.success('Activity refreshed!');
+            });
+        }
+
+        function openDepositModal() {
+            ModalManager.show('depositModal');
+        }
+
+        function openWithdrawModal() {
+            toast.info('Redirect to main app for withdrawal');
+            window.location.href = 'index.html#withdraw';
+        }
+
+        function openProofModal() {
+            toast.info('Redirect to crypto dashboard');
+            window.location.href = 'crypto-dashboard.html';
+        }
+
+        async function makeDeposit() {
+            const amount = document.getElementById('depositAmount').value;
+            
+            if (!amount || parseFloat(amount) <= 0) {
+                toast.error('Please enter a valid amount');
+                return;
+            }
+
+            toast.info('This would connect to the backend API');
+            ModalManager.hide('depositModal');
+        }
+
+        function logout() {
+            StorageHelper.clear();
+            toast.info('Logged out successfully');
+            setTimeout(() => window.location.href = 'index.html', 1000);
+        }
+    </script>
+</body>
+</html>

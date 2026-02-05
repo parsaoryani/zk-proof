@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Connectivity Diagnostic</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .test-item {
+            margin: 20px 0;
+            padding: 15px;
+            border-left: 4px solid #ddd;
+            background: #f9f9f9;
+        }
+        .test-item.success {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        .test-item.error {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+        .test-item.pending {
+            border-color: #ffc107;
+            background: #fff3cd;
+        }
+        .test-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .test-detail {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Backend Connectivity Diagnostic</h1>
+        <p>This page will help diagnose connection issues between your frontend and backend.</p>
+        
+        <button onclick="runDiagnostics()">Run All Tests</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const API_PORT = '8000';
+        const API_BASE = `http://${window.location.hostname}:${API_PORT}`;
+        
+        async function addResult(title, status, detail) {
+            const resultsDiv = document.getElementById('results');
+            const testItem = document.createElement('div');
+            testItem.className = `test-item ${status}`;
+            testItem.innerHTML = `
+                <div class="test-title">${title}</div>
+                <div class="test-detail">${detail}</div>
+            `;
+            resultsDiv.appendChild(testItem);
+        }
+
+        async function testHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    mode: 'cors',
+                    cache: 'no-cache'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.status === 'operational') {
+                    await addResult(
+                        '✓ Health Check',
+                        'success',
+                        `Status: ${response.status} | Response: ${JSON.stringify(data)}`
+                    );
+                    return true;
+                } else {
+                    await addResult(
+                        '✗ Health Check Failed',
+                        'error',
+                        `Status: ${response.status} | Response: ${JSON.stringify(data)}`
+                    );
+                    return false;
+                }
+            } catch (error) {
+                await addResult(
+                    '✗ Health Check Error',
+                    'error',
+                    `Error: ${error.message} | Type: ${error.name}`
+                );
+                return false;
+            }
+        }
+
+        async function testCORS() {
+            try {
+                const response = await fetch(`${API_BASE}/health`, {
+                    method: 'OPTIONS',
+                    headers: { 'Origin': window.location.origin }
+                });
+                
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers'),
+                };
+                
+                await addResult(
+                    '✓ CORS Configuration',
+                    'success',
+                    `Headers: ${JSON.stringify(corsHeaders, null, 2)}`
+                );
+                return true;
+            } catch (error) {
+                await addResult(
+                    '⚠ CORS Check',
+                    'error',
+                    `Error: ${error.message}`
+                );
+                return false;
+            }
+        }
+
+        async function testLogin() {
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'admin', password: 'admin' })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.access_token) {
+                    await addResult(
+                        '✓ Login Endpoint',
+                        'success',
+                        `Status: ${response.status} | Token received (${data.access_token.substring(0, 20)}...)`
+                    );
+                    return data.access_token;
+                } else {
+                    await addResult(
+                        '⚠ Login Failed',
+                        'error',
+                        `Status: ${response.status} | Response: ${JSON.stringify(data)}`
+                    );
+                    return null;
+                }
+            } catch (error) {
+                await addResult(
+                    '✗ Login Error',
+                    'error',
+                    `Error: ${error.message}`
+                );
+                return null;
+            }
+        }
+
+        async function testRegister() {
+            const testUsername = `test_${Date.now()}`;
+            try {
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        username: testUsername, 
+                        password: 'testpass123',
+                        email: `${testUsername}@test.com`
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok || response.status === 400) {
+                    await addResult(
+                        '✓ Register Endpoint',
+                        'success',
+                        `Status: ${response.status} | Response: ${JSON.stringify(data)}`
+                    );
+                    return true;
+                } else {
+                    await addResult(
+                        '⚠ Register Check',
+                        'error',
+                        `Status: ${response.status} | Response: ${JSON.stringify(data)}`
+                    );
+                    return false;
+                }
+            } catch (error) {
+                await addResult(
+                    '✗ Register Error',
+                    'error',
+                    `Error: ${error.message}`
+                );
+                return false;
+            }
+        }
+
+        async function runDiagnostics() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+            
+            await addResult('Configuration', 'pending', `API Base URL: ${API_BASE}<br>Origin: ${window.location.origin}`);
+            
+            console.log('Starting diagnostics...');
+            
+            // Test 1: Health check
+            const healthOk = await testHealth();
+            
+            // Test 2: CORS
+            await testCORS();
+            
+            // Test 3: Login
+            if (healthOk) {
+                await testLogin();
+            }
+            
+            // Test 4: Register
+            if (healthOk) {
+                await testRegister();
+            }
+            
+            await addResult('✓ Diagnostics Complete', 'success', `All tests finished. Check results above.`);
+        }
+
+        // Auto-run on load
+        window.addEventListener('load', () => {
+            setTimeout(runDiagnostics, 500);
+        });
+    </script>
+</body>
+</html>

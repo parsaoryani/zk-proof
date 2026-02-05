@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZK-Mixer Application</title>
+    <link rel="stylesheet" href="app.css">
+    <script src="app.js" defer></script>
+</head>
+<body>
+    <!-- Toast Container (from app.js ToastManager) -->
+    
+    <!-- Error Details Modal -->
+    <div id="errorModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 30px; border-radius: 10px; max-width: 600px; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0; color: #dc3545;">❌ Error Details</h2>
+                <button onclick="document.getElementById('errorModal').style.display='none'" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
+            </div>
+            <div id="errorContent" style="margin-bottom: 20px; padding: 15px; background: #f8d7da; border-radius: 5px; border-left: 4px solid #dc3545;">
+                <p id="errorMessage" style="margin: 0; color: #721c24;"></p>
+            </div>
+            <div id="errorDetails" style="margin-bottom: 20px; padding: 15px; background: #f4f4f4; border-radius: 5px; font-family: monospace; font-size: 12px; color: #333; display: none;">
+                <p style="margin: 0 0 10px 0; font-weight: bold;">Technical Details:</p>
+                <p id="errorTechnical" style="margin: 0; white-space: pre-wrap; word-break: break-all;"></p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="document.getElementById('errorModal').style.display='none'" style="flex: 1; padding: 10px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer;">Close</button>
+                <button onclick="copyErrorDetails()" style="flex: 1; padding: 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">📋 Copy Details</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Login/Register Screen -->
+    <div id="authScreen" class="auth-screen">
+        <div class="auth-container card">
+            <div class="auth-header">
+                <h1>🔐 ZK-Mixer</h1>
+                <p>Privacy-Preserving Anonymous Transactions</p>
+            </div>
+
+            <!-- Backend Status -->
+            <div id="backend-status" class="status-banner" style="margin-bottom: 20px;">
+                <span id="backend-icon">⏳</span>
+                <span id="backend-text">Checking backend...</span>
+                <button id="backend-retry" onclick="checkBackendStatus()" class="btn btn-sm btn-link" style="display: none; margin-left: 10px;">Retry</button>
+            </div>
+
+            <!-- Auth Tabs -->
+            <div class="tab-container">
+                <button class="tab-btn active" onclick="switchAuthTab('login')">Login</button>
+                <button class="tab-btn" onclick="switchAuthTab('register')">Register</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" class="auth-form active">
+                <div class="form-group">
+                    <label for="loginUsername">Username</label>
+                    <input type="text" id="loginUsername" class="form-control" required minlength="3" placeholder="Enter username" autocomplete="username">
+                    <small class="form-text">At least 3 characters</small>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" class="form-control" required minlength="4" placeholder="Enter password" autocomplete="current-password">
+                    <small class="form-text">At least 4 characters</small>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Login</button>
+                <p class="form-hint">Default: admin / admin</p>
+            </form>
+
+            <!-- Register Form -->
+            <form id="registerForm" class="auth-form">
+                <div class="form-group">
+                    <label for="registerUsername">Username</label>
+                    <input type="text" id="registerUsername" class="form-control" required minlength="3" maxlength="50" pattern="[a-zA-Z0-9_-]+" placeholder="Choose username" autocomplete="username">
+                    <small class="form-text">3-50 characters, letters, numbers, _ and - only</small>
+                </div>
+                <div class="form-group">
+                    <label for="registerEmail">Email (Optional)</label>
+                    <input type="email" id="registerEmail" class="form-control" placeholder="your@email.com" autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword">Password</label>
+                    <input type="password" id="registerPassword" class="form-control" required minlength="4" placeholder="Choose password" autocomplete="new-password">
+                    <small class="form-text">At least 4 characters</small>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Application Screen -->
+    <div id="appScreen" class="app-screen" style="display: none;">
+        <!-- Navbar -->
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="logo">
+                    <a href="index.html">🔐 ZK-Mixer</a>
+                </div>
+                <div class="nav-links">
+                    <a href="dashboard.html">Dashboard</a>
+                    <a href="#" onclick="showSection('deposit')">Deposit</a>
+                    <a href="#" onclick="showSection('withdraw')">Withdraw</a>
+                    <a href="#" onclick="showSection('transactions')">Transactions</a>
+                    <a href="#" onclick="showSection('audit')" id="auditNav" style="display: none;">Audit</a>
+                </div>
+                <div class="nav-actions">
+                    <div class="user-menu">
+                        <span id="userDisplay" class="user-name"></span>
+                        <button onclick="handleLogout()" class="btn btn-sm btn-outline">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="container">
+                
+                <!-- Stats Overview -->
+                <div class="stats-grid" id="statsSection">
+                    <div class="stat-card">
+                        <div class="stat-icon">💰</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Your Balance</div>
+                            <div class="stat-value" id="userBalance">$0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🏦</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Total System Balance</div>
+                            <div class="stat-value" id="totalBalance">$0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📥</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Total Deposits</div>
+                            <div class="stat-value" id="totalDeposits">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📤</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Total Withdrawals</div>
+                            <div class="stat-value" id="totalWithdrawals">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Deposit Section -->
+                <section id="depositSection" class="content-section active">
+                    <div class="section-header">
+                        <h2>💰 Make Deposit</h2>
+                        <p>Deposit funds privately into the mixer</p>
+                    </div>
+                    <div class="card">
+                        <form id="depositForm">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="depositIdentity">User Identity</label>
+                                    <input type="text" id="depositIdentity" class="form-control" required placeholder="user@example.com">
+                                    <small>This will be encrypted for audit purposes</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="depositAmount">Amount</label>
+                                    <input type="number" id="depositAmount" class="form-control" required placeholder="100" min="1" step="0.01">
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <span class="btn-icon">💳</span> Deposit Funds
+                                </button>
+                                <button type="reset" class="btn btn-secondary">Clear</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Recent Deposit Receipt -->
+                    <div id="depositReceipt" class="card success-card" style="display: none; margin-top: 20px;">
+                        <h3>✓ Deposit Successful</h3>
+                        <div class="receipt-details">
+                            <div class="receipt-item">
+                                <span class="label">Transaction Hash:</span>
+                                <span class="value" id="receiptTxHash">-</span>
+                            </div>
+                            <div class="receipt-item">
+                                <span class="label">Commitment:</span>
+                                <span class="value mono" id="receiptCommitment">-</span>
+                            </div>
+                            <div class="receipt-item">
+                                <span class="label">Amount:</span>
+                                <span class="value" id="receiptAmount">-</span>
+                            </div>
+                        </div>
+                        <p class="warning-text">⚠️ Save this commitment hash - you'll need it to withdraw!</p>
+                    </div>
+                </section>
+
+                <!-- Withdraw Section -->
+                <section id="withdrawSection" class="content-section">
+                    <div class="section-header">
+                        <h2>📤 Withdraw Funds</h2>
+                        <p>Withdraw your funds anonymously</p>
+                    </div>
+                    <div class="card">
+                        <form id="withdrawForm">
+                            <div class="form-group">
+                                <label for="withdrawCommitment">Commitment Hash</label>
+                                <input type="text" id="withdrawCommitment" class="form-control mono" required placeholder="Enter your commitment hash from deposit">
+                                <small style="color: #666; margin-top: 5px; display: block;">⚠️ Enter the commitment from your deposit - the full amount will be withdrawn automatically</small>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <span class="btn-icon">🔓</span> Withdraw Funds
+                                </button>
+                                <button type="reset" class="btn btn-secondary">Clear</button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- Transactions Section -->
+                <section id="transactionsSection" class="content-section">
+                    <div class="section-header">
+                        <h2>📊 Transaction History</h2>
+                        <div class="section-actions">
+                            <button onclick="refreshTransactions()" class="btn btn-sm btn-secondary">
+                                <span id="refreshIcon">🔄</span> Refresh
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Timestamp</th>
+                                        <th>Hash</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transactionList">
+                                    <tr>
+                                        <td colspan="5" class="empty-state">No transactions yet</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Audit Section (Admin Only) -->
+                <section id="auditSection" class="content-section" style="display: none;">
+                    <div class="section-header">
+                        <h2>🔍 Audit Transaction</h2>
+                        <p class="admin-badge">Admin Only</p>
+                    </div>
+                    <div class="card">
+                        <form id="auditForm">
+                            <div class="form-group">
+                                <label for="auditTxHash">Transaction Hash</label>
+                                <input type="text" id="auditTxHash" class="form-control mono" required placeholder="Enter transaction hash to audit">
+                            </div>
+                            <div class="form-group">
+                                <label for="auditPrivateKey">Auditor Private Key</label>
+                                <textarea id="auditPrivateKey" class="form-control mono" rows="4" required placeholder="Paste auditor private key (PEM format)"></textarea>
+                                <button type="button" onclick="loadAuditorKey()" class="btn btn-sm btn-link">Load from server</button>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <span class="btn-icon">🔍</span> Audit Transaction
+                                </button>
+                            </div>
+                        </form>
+
+                        <div id="auditResult" class="audit-result" style="display: none; margin-top: 20px;">
+                            <h3>Audit Result</h3>
+                            <div class="receipt-details">
+                                <div class="receipt-item">
+                                    <span class="label">Decrypted Identity:</span>
+                                    <span class="value" id="auditIdentity">-</span>
+                                </div>
+                                <div class="receipt-item">
+                                    <span class="label">Transaction Hash:</span>
+                                    <span class="value mono" id="auditResultHash">-</span>
+                                </div>
+                                <div class="receipt-item">
+                                    <span class="label">Audited At:</span>
+                                    <span class="value" id="auditTimestamp">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('=== ZK-Mixer App.html Loading ===');
+        console.log('Location:', window.location.href);
+        console.log('Timestamp:', new Date().toISOString());
+        
+        // Configuration - Define globally
+        const API_PORT = '8000';
+        const API_BASE = `http://${window.location.hostname}:${API_PORT}`;
+        console.log('[CONFIG] API_BASE:', API_BASE);
+        
+        // Global state
+        let currentUser = null;
+        let authToken = null;
+        let refreshInterval = null;
+        
+        // Will be initialized when app.js loads
+        let toast, theme, loading;
+        
+        // ===========================================
+        // Error Modal Display Function
+        // ===========================================
+        window.showErrorDetails = function(message, technicalDetails) {
+            const modal = document.getElementById('errorModal');
+            const msgEl = document.getElementById('errorMessage');
+            const techEl = document.getElementById('errorTechnical');
+            const detailsDiv = document.getElementById('errorDetails');
+            
+            msgEl.textContent = message || 'An error occurred';
+            
+            if (technicalDetails) {
+                techEl.textContent = technicalDetails;
+                detailsDiv.style.display = 'block';
+            } else {
+                detailsDiv.style.display = 'none';
+            }
+            
+            modal.style.display = 'flex';
+        };
+        
+        window.copyErrorDetails = function() {
+            const message = document.getElementById('errorMessage').textContent;
+            const technical = document.getElementById('errorTechnical').textContent;
+            const fullText = `ERROR: ${message}\n\nTECHNICAL DETAILS:\n${technical}`;
+            
+            navigator.clipboard.writeText(fullText).then(() => {
+                toast.success('Error details copied to clipboard');
+            }).catch(() => {
+                toast.error('Failed to copy error details');
+            });
+        };
+        
+        // ===========================================
+        // CRITICAL: Define these functions immediately so onclick handlers work
+        // ===========================================
+        
+        // Auth Tab Switching - needs to be available immediately
+        window.switchAuthTab = function(tab) {
+            console.log('[TAB] Switching to:', tab);
+            try {
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
+                
+                // Find which button was clicked and activate it
+                const buttons = document.querySelectorAll('.tab-btn');
+                buttons.forEach(btn => {
+                    if (btn.textContent.toLowerCase() === tab) {
+                        btn.classList.add('active');
+                    }
+                });
+                
+                const formToShow = document.getElementById(tab === 'login' ? 'loginForm' : 'registerForm');
+                if (formToShow) {
+                    formToShow.classList.add('active');
+                    console.log('[TAB] Activated form:', formToShow.id);
+                } else {
+                    console.error('[TAB] Form not found for tab:', tab);
+                }
+            } catch (error) {
+                console.error('[TAB] Error switching tabs:', error);
+            }
+        };
+        
+        // Backend Status Check - needs to be available immediately for retry button
+        window.checkBackendStatus = async function() {
+            console.log('[HEALTH] Checking backend status at:', API_BASE + '/health');
+            const statusDiv = document.getElementById('backend-status');
+            const icon = document.getElementById('backend-icon');
+            const text = document.getElementById('backend-text');
+            const retryBtn = document.getElementById('backend-retry');
+
+            if (!statusDiv) {
+                console.error('[HEALTH] Status div not found!');
+                return;
+            }
+
+            // Show checking state
+            statusDiv.className = 'status-banner';
+            icon.textContent = '⏳';
+            text.textContent = 'Checking backend...';
+            if (retryBtn) retryBtn.style.display = 'none';
+
+            try {
+                // Create a timeout promise for browser compatibility
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Request timeout')), 5000)
+                );
+                
+                const fetchPromise = fetch(`${API_BASE}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                    },
+                    mode: 'cors',
+                    cache: 'no-cache'
+                });
+
+                // Race between fetch and timeout
+                const response = await Promise.race([fetchPromise, timeoutPromise]);
+                console.log('[HEALTH] Response status:', response.status);
+                
+                const data = await response.json();
+                console.log('[HEALTH] Response data:', data);
+
+                if (response.ok && data.status === 'operational') {
+                    statusDiv.className = 'status-banner status-success';
+                    icon.textContent = '✓';
+                    text.textContent = 'Backend connected';
+                    if (retryBtn) retryBtn.style.display = 'none';
+                    console.log('[HEALTH] ✓ Backend is operational');
+                } else {
+                    throw new Error('Not operational');
+                }
+            } catch (error) {
+                console.error('[HEALTH] ✗ Backend check failed:', error.message);
+                statusDiv.className = 'status-banner status-error';
+                icon.textContent = '✗';
+                text.textContent = 'Backend offline - Please run ./run.sh';
+                if (retryBtn) retryBtn.style.display = 'inline-block';
+            }
+        };
+        
+        // Global error handler
+        window.addEventListener('error', function(e) {
+            console.error('[GLOBAL ERROR]', e.error || e.message);
+            console.error('  File:', e.filename);
+            console.error('  Line:', e.lineno, 'Col:', e.colno);
+        });
+        
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('[UNHANDLED PROMISE REJECTION]', e.reason);
+        });
+        
+        // Helper function for resilient fetch with retry logic
+        window.fetchWithRetry = async function(url, options = {}, maxRetries = 2) {
+            let lastError;
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    console.log(`[FETCH] Attempt ${attempt}/${maxRetries}`);
+                    const response = await fetch(url, options);
+                    return response;
+                } catch (error) {
+                    lastError = error;
+                    console.warn(`[FETCH] Attempt ${attempt} failed:`, error.message);
+                    if (attempt < maxRetries) {
+                        const delay = Math.pow(2, attempt - 1) * 500;
+                        console.log(`[FETCH] Retrying in ${delay}ms...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+                }
+            }
+            throw lastError;
+        };
+        
+        // Wait for app.js to load
+        function initApp() {
+            // Check if utilities are loaded
+            if (typeof ToastManager === 'undefined' || typeof LoadingManager === 'undefined') {
+                console.log('[INIT] Waiting for app.js to load... (ToastManager:', typeof ToastManager, ', LoadingManager:', typeof LoadingManager, ')');
+                setTimeout(initApp, 100);
+                return;
+            }
+            
+            console.log('[INIT] App.js loaded successfully!');
+            console.log('[CONFIG] API_BASE is set to:', API_BASE);
+            console.log('[CONFIG] Current location:', window.location.href);
+
+            // Initialize utilities from app.js
+            console.log('[INIT] Creating manager instances...');
+            try {
+                toast = new ToastManager();
+                console.log('[INIT] ToastManager created');
+                theme = new ThemeManager();
+                console.log('[INIT] ThemeManager created');
+                loading = new LoadingManager();
+                console.log('[INIT] LoadingManager created');
+            } catch (e) {
+                console.error('[INIT] Error creating managers:', e);
+                alert('Failed to initialize app: ' + e.message);
+                return;
+            }
+
+            // Check for saved session
+            console.log('[AUTH] Checking for saved session...');
+            const savedToken = localStorage.getItem('authToken');
+            const savedUser = localStorage.getItem('currentUser');
+            console.log('[AUTH] Saved token exists:', !!savedToken);
+            console.log('[AUTH] Saved user exists:', !!savedUser);
+            
+            if (savedToken && savedUser) {
+                console.log('[AUTH] Restoring session...');
+                authToken = savedToken;
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    console.log('[AUTH] Session restored for user:', currentUser.username);
+                    showAppScreen();
+                } catch(e) {
+                    console.error('[AUTH] Failed to parse saved user:', e);
+                    localStorage.clear();
+                }
+            } else {
+                console.log('[AUTH] No saved session found');
+            }
+
+            // Setup form handlers
+            console.log('[INIT] Setting up form handlers...');
+            try {
+                const loginForm = document.getElementById('loginForm');
+                console.log('[INIT] Login form element:', loginForm ? 'Found' : 'NOT FOUND');
+                if (loginForm) {
+                    loginForm.addEventListener('submit', handleLogin);
+                    console.log('[INIT] ✓ Login form handler attached');
+                    console.log('[INIT] Login form action:', loginForm.action);
+                    console.log('[INIT] Login form method:', loginForm.method);
+                } else {
+                    console.error('[INIT] ✗ Login form not found in DOM!');
+                }
+                
+                const registerForm = document.getElementById('registerForm');
+                console.log('[INIT] Register form element:', registerForm ? 'Found' : 'NOT FOUND');
+                if (registerForm) {
+                    registerForm.addEventListener('submit', handleRegister);
+                    console.log('[INIT] ✓ Register form handler attached');
+                } else {
+                    console.error('[INIT] ✗ Register form not found in DOM!');
+                }
+                
+                const depositForm = document.getElementById('depositForm');
+                if (depositForm) {
+                    depositForm.addEventListener('submit', handleDeposit);
+                    console.log('[INIT] ✓ Deposit form handler attached');
+                }
+                
+                const withdrawForm = document.getElementById('withdrawForm');
+                if (withdrawForm) {
+                    withdrawForm.addEventListener('submit', handleWithdraw);
+                    console.log('[INIT] ✓ Withdraw form handler attached');
+                }
+                
+                const auditForm = document.getElementById('auditForm');
+                if (auditForm) {
+                    auditForm.addEventListener('submit', handleAudit);
+                    console.log('[INIT] ✓ Audit form handler attached');
+                }
+            } catch(e) {
+                console.error('[INIT] ✗ CRITICAL ERROR setting up form handlers!');
+                console.error('[INIT] Error name:', e.name);
+                console.error('[INIT] Error message:', e.message);
+                console.error('[INIT] Error stack:', e.stack);
+            }
+
+            // Check backend status immediately
+            console.log('[INIT] Starting backend health checks...');
+            checkBackendStatus();
+            setInterval(checkBackendStatus, 10000);
+            
+            console.log('[INIT] ✓ Initialization complete!');
+            console.log('=================================');
+
+            // Authentication
+            async function handleLogin(e) {
+                e.preventDefault();
+                console.log('==========================================');
+                console.log('[LOGIN] Form submitted at:', new Date().toISOString());
+                console.log('[LOGIN] Event type:', e.type);
+                console.log('[LOGIN] Event target:', e.target);
+                
+                const username = document.getElementById('loginUsername').value;
+                const password = document.getElementById('loginPassword').value;
+                
+                console.log('[LOGIN] Username field:', username ? `"${username}" (length: ${username.length})` : 'EMPTY');
+                console.log('[LOGIN] Password field:', password ? `*** (length: ${password.length})` : 'EMPTY');
+                
+                if (!username || !password) {
+                    console.warn('[LOGIN] Validation failed - missing credentials');
+                    toast.error('Please enter username and password');
+                    return;
+                }
+                
+                console.log('[LOGIN] Validation passed, showing loading state...');
+                loading.show('Logging in...');
+
+                try {
+                    const requestUrl = `${API_BASE}/auth/login`;
+                    const requestBody = { username, password };
+                    
+                    console.log('[LOGIN] Preparing request:');
+                    console.log('  URL:', requestUrl);
+                    console.log('  Method: POST');
+                    console.log('  Headers: Content-Type: application/json');
+                    console.log('  Body:', JSON.stringify({ username, password: '***' }));
+                    
+                    const fetchStartTime = Date.now();
+                    const response = await fetch(requestUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(requestBody)
+                    });
+                    const fetchDuration = Date.now() - fetchStartTime;
+
+                    console.log(`[LOGIN] Response received in ${fetchDuration}ms`);
+                    console.log('[LOGIN] Response status:', response.status, response.statusText);
+                    console.log('[LOGIN] Response headers:', Object.fromEntries(response.headers.entries()));
+                    
+                    const data = await response.json();
+                    console.log('[LOGIN] Response body:', data);
+
+                    if (!response.ok) {
+                        console.error('[LOGIN] Request failed with status:', response.status);
+                        console.error('[LOGIN] Error details:', data);
+                        throw new Error(formatApiError('Login', response.status, data.detail || data.message));
+                    }
+
+                    console.log('[LOGIN] ✓ Authentication successful!');
+                    console.log('[LOGIN] Received token:', data.access_token ? `${data.access_token.substring(0, 20)}...` : 'MISSING');
+                    console.log('[LOGIN] User ID:', data.user_id);
+                    console.log('[LOGIN] Username:', data.username);
+                    console.log('[LOGIN] Role:', data.role);
+                    
+                    authToken = data.access_token;
+                    currentUser = {
+                        id: data.user_id,
+                        username: data.username,
+                        role: data.role
+                    };
+
+                    console.log('[LOGIN] Saving to localStorage...');
+                    localStorage.setItem('authToken', authToken);
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    console.log('[LOGIN] Session saved successfully');
+
+                    toast.success('Login successful!');
+                    console.log('[LOGIN] Transitioning to app screen...');
+                    showAppScreen();
+                    console.log('[LOGIN] Login process complete!');
+                    console.log('==========================================');
+                } catch (error) {
+                    console.error('[LOGIN] ✗ Login failed!');
+                    console.error('[LOGIN] Error name:', error.name);
+                    console.error('[LOGIN] Error message:', error.message);
+                    console.error('[LOGIN] Error stack:', error.stack);
+                    console.error('[LOGIN] Full error object:', error);
+                    toast.error(error.message || 'Login failed. Please try again.');
+                    console.log('==========================================');
+                } finally {
+                    console.log('[LOGIN] Hiding loading state...');
+                    loading.hide();
+                }
+            }
+
+            async function handleRegister(e) {
+                e.preventDefault();
+                console.log('==========================================');
+                console.log('[REGISTER] Form submitted at:', new Date().toISOString());
+                console.log('[REGISTER] Event type:', e.type);
+                console.log('[REGISTER] Event target:', e.target);
+                
+                const username = document.getElementById('registerUsername').value;
+                const email = document.getElementById('registerEmail').value;
+                const password = document.getElementById('registerPassword').value;
+                
+                console.log('[REGISTER] Username field:', username ? `"${username}" (length: ${username.length})` : 'EMPTY');
+                console.log('[REGISTER] Email field:', email ? `"${email}"` : 'EMPTY');
+                console.log('[REGISTER] Password field:', password ? `*** (length: ${password.length})` : 'EMPTY');
+                
+                if (!username || !password) {
+                    console.warn('[REGISTER] Validation failed - missing required fields');
+                    toast.error('Please enter username and password');
+                    return;
+                }
+                
+                console.log('[REGISTER] Validation passed, showing loading state...');
+                loading.show('Creating account...');
+
+                try {
+                    const requestUrl = `${API_BASE}/auth/register`;
+                    const requestBody = {
+                        username: username,
+                        email: email || undefined,
+                        password: password
+                    };
+                    
+                    console.log('[REGISTER] Preparing request:');
+                    console.log('  URL:', requestUrl);
+                    console.log('  Method: POST');
+                    console.log('  Headers: Content-Type: application/json');
+                    console.log('  Body:', JSON.stringify({ username, email: email || undefined, password: '***' }));
+                    
+                    const fetchStartTime = Date.now();
+                    const response = await fetch(requestUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(requestBody)
+                    });
+                    const fetchDuration = Date.now() - fetchStartTime;
+
+                    console.log(`[REGISTER] Response received in ${fetchDuration}ms`);
+                    console.log('[REGISTER] Response status:', response.status, response.statusText);
+                    console.log('[REGISTER] Response headers:', Object.fromEntries(response.headers.entries()));
+
+                    if (!response.ok) {
+                        const error = await response.json();
+                        console.error('[REGISTER] Request failed with status:', response.status);
+                        console.error('[REGISTER] Error details:', error);
+                        throw new Error(formatApiError('Registration', response.status, error.detail || error.message));
+                    }
+
+                    const data = await response.json();
+                    console.log('[REGISTER] ✓ Registration successful!');
+                    console.log('[REGISTER] Response body:', data);
+
+                    toast.success('Account created! Please log in.');
+                    console.log('[REGISTER] Switching to login tab...');
+                    switchAuthTab('login');
+                    console.log('[REGISTER] Resetting form...');
+                    document.getElementById('registerForm').reset();
+                    console.log('[REGISTER] Registration process complete!');
+                    console.log('==========================================');
+                } catch (error) {
+                    console.error('[REGISTER] ✗ Registration failed!');
+                    console.error('[REGISTER] Error name:', error.name);
+                    console.error('[REGISTER] Error message:', error.message);
+                    console.error('[REGISTER] Error stack:', error.stack);
+                    console.error('[REGISTER] Full error object:', error);
+                    toast.error(error.message || 'Registration failed. Please try again.');
+                    console.log('==========================================');
+                } finally {
+                    console.log('[REGISTER] Hiding loading state...');
+                    loading.hide();
+                }
+            }
+
+        function handleLogout() {
+            if (refreshInterval) clearInterval(refreshInterval);
+            
+            localStorage.clear();
+            authToken = null;
+            currentUser = null;
+
+            document.getElementById('authScreen').style.display = 'flex';
+            document.getElementById('appScreen').style.display = 'none';
+            document.getElementById('loginForm').reset();
+            
+            toast.info('Logged out successfully');
+        }
+
+        // App Screen Management
+        function showAppScreen() {
+            console.log('[UI] Switching to app screen...');
+            document.getElementById('authScreen').style.display = 'none';
+            document.getElementById('appScreen').style.display = 'block';
+            console.log('[UI] App screen now visible');
+
+            // Update user display
+            const roleBadge = currentUser.role === 'admin' ? '<span class="badge badge-admin">Admin</span>' : '';
+            document.getElementById('userDisplay').innerHTML = `${currentUser.username} ${roleBadge}`;
+
+            // Show/hide admin sections - hide by default, show only for admin
+            const auditNav = document.getElementById('auditNav');
+            const auditSection = document.getElementById('auditSection');
+            
+            if (currentUser.role === 'admin') {
+                console.log('[UI] Admin user detected - showing audit sections');
+                if (auditNav) auditNav.style.display = 'block';
+                if (auditSection) auditSection.style.display = 'block';
+            } else {
+                console.log('[UI] Regular user - hiding audit sections');
+                if (auditNav) auditNav.style.display = 'none';
+                if (auditSection) auditSection.style.display = 'none';
+            }
+
+            // Load data
+            refreshStats();
+            refreshTransactions();
+
+            // Start auto-refresh
+            if (refreshInterval) clearInterval(refreshInterval);
+            refreshInterval = setInterval(() => {
+                refreshStats();
+                refreshTransactions();
+            }, 15000);
+        }
+
+        // Section Navigation
+        function showSection(section) {
+            console.log('[NAV] Switching to section:', section);
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+            
+            const sectionMap = {
+                'deposit': 'depositSection',
+                'withdraw': 'withdrawSection',
+                'transactions': 'transactionsSection',
+                'audit': 'auditSection'
+            };
+            
+            const sectionId = sectionMap[section];
+            if (sectionId) {
+                console.log('[NAV] Activating section ID:', sectionId);
+                document.getElementById(sectionId).classList.add('active');
+            } else {
+                console.warn('[NAV] Unknown section:', section);
+            }
+        }
+
+        // Stats Management
+        async function refreshStats() {
+            try {
+                console.log('[STATS] Fetching statistics...');
+                const [statsRes, healthRes] = await Promise.all([
+                    fetch(`${API_BASE}/statistics`, {
+                        headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
+                    }),
+                    fetch(`${API_BASE}/health`)
+                ]);
+
+                if (statsRes.ok) {
+                    const stats = await statsRes.json();
+                    console.log('[STATS] Statistics received:', stats);
+                    
+                    document.getElementById('totalDeposits').textContent = stats.total_deposits || 0;
+                    document.getElementById('totalWithdrawals').textContent = stats.total_withdrawals || 0;
+                    
+                    // Display user balance from API
+                    const userBalance = stats.user_balance || 0;
+                    document.getElementById('userBalance').textContent = `$${userBalance.toFixed(2)}`;
+                    console.log('[STATS] User balance:', userBalance);
+                    
+                    // Display total system balance from API
+                    const totalBalance = stats.total_balance || 0;
+                    document.getElementById('totalBalance').textContent = `$${totalBalance.toFixed(2)}`;
+                    console.log('[STATS] Total balance:', totalBalance);
+                }
+
+                if (healthRes.ok) {
+                    const health = await healthRes.json();
+                    document.getElementById('systemStatus').textContent = health.status === 'operational' ? 'Operational' : 'Issues';
+                    document.getElementById('healthIcon').textContent = health.status === 'operational' ? '✓' : '⚠';
+                }
+            } catch (error) {
+                console.error('[STATS] Error refreshing stats:', error);
+            }
+        }
+
+        // Deposit Handler
+        async function handleDeposit(e) {
+            e.preventDefault();
+            loading.show();
+
+            try {
+                const identity = document.getElementById('depositIdentity').value.trim();
+                const amount = parseFloat(document.getElementById('depositAmount').value);
+
+                if (!identity) {
+                    throw new Error('Please enter your identity.');
+                }
+
+                if (!Number.isFinite(amount) || amount <= 0) {
+                    throw new Error('Invalid amount. Please enter a positive number.');
+                }
+
+                const response = await fetch(`${API_BASE}/deposit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        identity: identity,
+                        amount: amount
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({}));
+                    throw new Error(formatApiError('Deposit', response.status, error.detail || error.message));
+                }
+
+                const data = await response.json();
+                
+                // Show receipt
+                document.getElementById('receiptTxHash').textContent = data.deposit_hash;
+                document.getElementById('receiptCommitment').textContent = data.commitment;
+                document.getElementById('receiptAmount').textContent = `$${document.getElementById('depositAmount').value}`;
+                document.getElementById('depositReceipt').style.display = 'block';
+
+                toast.success('Deposit successful!');
+                document.getElementById('depositForm').reset();
+                
+                setTimeout(() => {
+                    refreshStats();
+                    refreshTransactions();
+                }, 1000);
+            } catch (error) {
+                toast.error(error.message);
+            } finally {
+                loading.hide();
+            }
+        }
+
+        // Withdraw Handler
+        async function handleWithdraw(e) {
+            e.preventDefault();
+            console.log('[WITHDRAW] Withdrawal form submitted');
+            loading.show('Processing withdrawal...');
+
+            try {
+                const commitment = document.getElementById('withdrawCommitment').value.trim();
+                
+                if (!commitment) {
+                    throw new Error('Please enter a commitment value');
+                }
+                
+                console.log('[WITHDRAW] Commitment provided:', commitment.substring(0, 20) + '...');
+                
+                // Normalize commitment format (remove 0x prefix if present, ensure lowercase)
+                const normalizedCommitment = commitment.toLowerCase().replace(/^0x/, '');
+                console.log('[WITHDRAW] Normalized commitment:', normalizedCommitment.substring(0, 20) + '...');
+
+                // Validate commitment format: 32 bytes => 64 hex chars
+                if (!/^[0-9a-f]{64}$/.test(normalizedCommitment)) {
+                    throw new Error('Invalid commitment format. Expected 64 hex characters (32 bytes).');
+                }
+                
+                // Get the deposit amount from the commitment by finding it in transactions
+                let amount = null;
+                let foundDeposit = null;
+                
+                if (authToken) {
+                    const txRes = await fetch(`${API_BASE}/transactions?limit=1000`, {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    });
+                    if (txRes.ok) {
+                        const txData = await txRes.json();
+                        if (txData.transactions) {
+                            // Find the deposit with this commitment (try both formats)
+                            foundDeposit = txData.transactions.find(tx => {
+                                if (tx.tx_type !== 'deposit') return false;
+                                
+                                // Normalize the stored commitment
+                                const storedCommitment = (tx.commitment || '').toLowerCase().replace(/^0x/, '');
+                                
+                                // Match either full commitment or partial match
+                                return storedCommitment === normalizedCommitment || 
+                                       normalizedCommitment === storedCommitment ||
+                                       storedCommitment.includes(normalizedCommitment) ||
+                                       normalizedCommitment.includes(storedCommitment);
+                            });
+                            
+                            if (foundDeposit) {
+                                amount = foundDeposit.amount;
+                                console.log('[WITHDRAW] ✓ Found matching deposit!');
+                                console.log('[WITHDRAW] Transaction hash:', foundDeposit.transaction_hash);
+                                console.log('[WITHDRAW] Amount:', amount);
+                                console.log('[WITHDRAW] Stored commitment:', foundDeposit.commitment);
+                            } else {
+                                console.warn('[WITHDRAW] No matching deposit found');
+                                console.log('[WITHDRAW] Searched through', txData.transactions.length, 'transactions');
+                                console.log('[WITHDRAW] Available deposits:', 
+                                    txData.transactions.filter(tx => tx.tx_type === 'deposit').map(tx => ({
+                                        hash: tx.transaction_hash,
+                                        commitment: tx.commitment ? tx.commitment.substring(0, 20) + '...' : 'none'
+                                    }))
+                                );
+                            }
+                        }
+                    }
+                }
+                
+                if (!amount) {
+                    throw new Error('Commitment not found in your deposits. Please check the commitment value.');
+                }
+
+                console.log('[WITHDRAW] Generating ZK proof...');
+                // Generate withdrawal proof - this is automatically calculated
+                const proof = await generateWithdrawalProof(normalizedCommitment, amount);
+                console.log('[WITHDRAW] ZK proof generated');
+
+                console.log('[WITHDRAW] Sending withdrawal request...');
+                const response = await fetch(`${API_BASE}/withdraw`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(proof)
+                });
+
+                console.log('[WITHDRAW] Response status:', response.status);
+                
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({}));
+                    console.error('[WITHDRAW] Error response:', error);
+                    throw new Error(formatApiError('Withdrawal', response.status, error.detail || error.message));
+                }
+
+                const data = await response.json();
+                console.log('[WITHDRAW] Withdrawal successful:', data);
+                
+                toast.success(`Withdrawal of $${amount} successful!`);
+                document.getElementById('withdrawForm').reset();
+                
+                setTimeout(() => {
+                    refreshStats();
+                    refreshTransactions();
+                }, 1000);
+            } catch (error) {
+                console.error('[WITHDRAW] Withdrawal error:', error);
+                console.error('[WITHDRAW] Full error:', error);
+                
+                // Show detailed error to user with modal
+                let userMessage = error.message || 'Withdrawal failed';
+                
+                // Split into user-friendly message and technical details
+                const errorLines = userMessage.split('\\n');
+                let friendlyMessage = errorLines[0] || 'Withdrawal failed';
+                let technicalDetails = errorLines.slice(1).join('\\n');
+                
+                // Show toast with brief message
+                toast.error(friendlyMessage);
+                
+                // Show modal with detailed error info if available
+                if (technicalDetails) {
+                    setTimeout(() => {
+                        showErrorDetails(friendlyMessage, technicalDetails);
+                    }, 500);
+                }
+            } finally {
+                loading.hide();
+            }
+        }
+
+        // Transaction History
+        async function refreshTransactions() {
+            try {
+                console.log('[TX] Fetching transactions...');
+                const response = await fetch(`${API_BASE}/transactions?limit=50`, {
+                    headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
+                });
+
+                if (!response.ok) {
+                    console.error('[TX] Failed to fetch transactions:', response.status);
+                    return;
+                }
+
+                const data = await response.json();
+                const tbody = document.getElementById('transactionList');
+                
+                if (!data.transactions || data.transactions.length === 0) {
+                    console.log('[TX] No transactions found');
+                    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No transactions yet</td></tr>';
+                    return;
+                }
+
+                console.log('[TX] Loaded', data.transactions.length, 'transactions');
+                tbody.innerHTML = data.transactions.map(tx => `
+                    <tr>
+                        <td><span class="badge badge-${tx.tx_type === 'deposit' ? 'success' : 'info'}">${tx.tx_type}</span></td>
+                        <td>$${(tx.amount || 0).toFixed(2)}</td>
+                        <td><span class="badge badge-${tx.status === 'confirmed' ? 'success' : 'warning'}">${tx.status}</span></td>
+                        <td>${new Date(tx.timestamp).toLocaleString()}</td>
+                        <td class="mono" title="${tx.transaction_hash}" style="cursor: pointer; user-select: all;" onclick="copyToClipboard('${tx.transaction_hash}', this)">
+                            ${tx.transaction_hash.substring(0, 20)}...
+                            <span style="font-size: 0.8em; opacity: 0.7;" title="Click to copy full hash">📋</span>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('[TX] Error loading transactions:', error);
+            }
+        }
+        
+        // Helper function to copy transaction hash
+        window.copyToClipboard = function(text, element) {
+            navigator.clipboard.writeText(text).then(() => {
+                console.log('[TX] Copied to clipboard:', text.substring(0, 20) + '...');
+                const originalText = element.textContent;
+                element.textContent = '✓ Copied!';
+                setTimeout(() => {
+                    element.innerHTML = originalText + '<span style="font-size: 0.8em; opacity: 0.7;" title="Click to copy full hash">📋</span>';
+                }, 2000);
+            }).catch(err => {
+                console.error('[TX] Failed to copy:', err);
+                toast.error('Failed to copy hash');
+            });
+        };
+
+        // Audit Functions (Admin Only)
+        async function loadAuditorKey() {
+            // Check if user is admin first
+            if (!currentUser || currentUser.role !== 'admin') {
+                toast.error('Admin access required to load auditor key');
+                return;
+            }
+            
+            loading.show('Loading auditor key...');
+            try {
+                const response = await fetch(`${API_BASE}/admin/auditor-key`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({}));
+                    throw new Error(formatApiError('Load auditor key', response.status, error.detail || error.message));
+                }
+
+                const data = await response.json();
+                document.getElementById('auditPrivateKey').value = data.auditor_private_key;
+                toast.success('Auditor key loaded successfully');
+            } catch (error) {
+                console.error('[AUDIT] Error loading auditor key:', error);
+                toast.error(error.message || 'Failed to load auditor key');
+            } finally {
+                loading.hide();
+            }
+        }
+
+        async function handleAudit(e) {
+            e.preventDefault();
+            loading.show('Running audit...');
+
+            try {
+                const txHash = document.getElementById('auditTxHash').value.trim();
+                const auditorKey = document.getElementById('auditPrivateKey').value.trim();
+
+                if (!txHash) {
+                    throw new Error('Please enter a transaction hash to audit.');
+                }
+
+                if (!auditorKey) {
+                    throw new Error('Please provide the auditor private key.');
+                }
+
+                const response = await fetch(`${API_BASE}/audit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        transaction_hash: txHash,
+                        auditor_private_key: auditorKey
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({}));
+                    // For audit, show the actual error detail from the backend
+                    const errorDetail = error.detail || error.message || 'Unknown error';
+                    throw new Error(`Audit failed: ${errorDetail}`);
+                }
+
+                const data = await response.json();
+                
+                // Show result
+                document.getElementById('auditIdentity').textContent = data.decrypted_identity;
+                document.getElementById('auditResultHash').textContent = data.transaction_hash;
+                document.getElementById('auditTimestamp').textContent = new Date(data.audit_timestamp).toLocaleString();
+                document.getElementById('auditResult').style.display = 'block';
+
+                toast.success('Audit completed successfully');
+            } catch (error) {
+                // Display the full error message without additional formatting
+                toast.error(error.message || 'Audit failed. Please try again.');
+            } finally {
+                loading.hide();
+            }
+        }
+
+        // Helper Functions
+        async function generateNullifier(commitment) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(commitment);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function generateWithdrawalProof(commitment, amount) {
+            const nullifier = await generateNullifier(commitment);
+            const timestamp = new Date().toISOString();
+            
+            // Simplified proof structure
+            return {
+                nullifier: nullifier,
+                merkle_path: Array(32).fill('0'.repeat(64)),
+                leaf_index: 0,
+                identity_encryption_proof: '0'.repeat(64),
+                encrypted_identity: '0'.repeat(256),
+                timestamp: timestamp,
+                withdrawal_amount: amount
+            };
+        }
+
+        // ============================================
+        // Error Message Helper
+        // ============================================
+        function formatApiError(action, status, detail) {
+            const message = (detail || '').toLowerCase();
+            let reason = '';
+
+            // Priority: check status code first for most specific errors
+            if (status === 409) {
+                reason = 'Double-spend detected: This commitment has already been withdrawn.';
+            } else if (status === 422) {
+                reason = 'Invalid format. Please check the input format and try again.';
+            } else if (status === 404) {
+                reason = 'Not found. The commitment does not exist.';
+            } else if (message.includes('double')) {
+                reason = 'Double-spend detected: This commitment has already been withdrawn.';
+            } else if (message.includes('commitment')) {
+                reason = 'Commitment not found or already spent. Please verify the commitment value.';
+            } else if (message.includes('format') || message.includes('hex')) {
+                reason = 'Invalid format. Please check the input format and try again.';
+            } else if (message.includes('amount')) {
+                reason = 'Invalid amount. Please enter a positive number.';
+            } else if (message.includes('username already exists')) {
+                reason = 'Username already exists. Please choose another.';
+            } else if (message.includes('invalid') && message.includes('password')) {
+                reason = 'Invalid username or password.';
+            } else if (message.includes('unauthorized')) {
+                reason = 'Unauthorized. Please log in again.';
+            } else if (message.includes('proof')) {
+                reason = 'Invalid proof. Please regenerate and try again.';
+            } else if (message.includes('merkle')) {
+                reason = 'Merkle tree verification failed. Please try again later.';
+            }
+
+            if (!reason) {
+                if (status === 400) reason = 'Bad request. Please check your inputs.';
+                else if (status === 401) reason = 'Session expired. Please log in again.';
+                else if (status === 403) reason = 'You do not have permission to perform this action.';
+                else if (status >= 500) reason = 'Server error. Please try again later.';
+                else reason = detail || 'Unexpected error occurred.';
+            }
+
+            return `${action} failed: ${reason}`;
+        }
+
+        // Make functions accessible globally
+        window.handleLogout = handleLogout;
+        window.showSection = showSection;
+        window.loadAuditorKey = loadAuditorKey;
+        window.refreshTransactions = refreshTransactions;
+    }
+
+        // Start initialization when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            initApp();
+        }
+    </script>
+</body>
+</html>
