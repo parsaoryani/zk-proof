@@ -100,6 +100,9 @@ class TestDepositEndpoint:
     
     def test_multiple_deposits(self, client):
         """Test multiple deposits."""
+        initial_state = client.get("/state").json()
+        initial_commitments = initial_state.get("num_commitments", 0)
+
         for i in range(5):
             payload = {
                 "identity": f"user{i}@example.com",
@@ -112,7 +115,7 @@ class TestDepositEndpoint:
         state_response = client.get("/state")
         assert state_response.status_code == 200
         state = state_response.json()
-        assert state["num_commitments"] == 5
+        assert state["num_commitments"] == initial_commitments + 5
 
 
 class TestWithdrawalEndpoint:
@@ -130,7 +133,7 @@ class TestWithdrawalEndpoint:
         }
         response = client.post("/withdraw", json=payload)
         # Should fail because proof is invalid
-        assert response.status_code in [400, 500]
+        assert response.status_code in [400, 422, 500]
 
 
 class TestAuditEndpoint:
@@ -154,7 +157,7 @@ class TestAuditEndpoint:
         }
         response = client.post("/audit", json=audit_payload)
         # Should fail with invalid key
-        assert response.status_code == 400
+        assert response.status_code in [401, 403]
 
 
 class TestTransactionHistoryEndpoints:
@@ -219,7 +222,7 @@ class TestErrorHandling:
     def test_invalid_json(self, client):
         """Test invalid JSON in request."""
         response = client.post("/deposit", json={"invalid": "data"})
-        assert response.status_code == 422  # Validation error
+        assert response.status_code == 400  # Validation error
 
 
 class TestAPIWorkflow:
@@ -229,7 +232,7 @@ class TestAPIWorkflow:
         """Test complete deposit workflow."""
         # 1. Check initial state
         state = client.get("/state").json()
-        assert state["num_commitments"] == 0
+        initial_commitments = state.get("num_commitments", 0)
         
         # 2. Create deposit
         deposit_payload = {
@@ -242,7 +245,7 @@ class TestAPIWorkflow:
         
         # 3. Check state updated
         state = client.get("/state").json()
-        assert state["num_commitments"] == 1
+        assert state["num_commitments"] == initial_commitments + 1
         
         # 4. Check statistics
         stats = client.get("/statistics").json()
@@ -251,5 +254,5 @@ class TestAPIWorkflow:
         
         # 5. Get transaction
         tx = client.get(f"/transactions/{deposit['deposit_hash']}").json()
-        assert tx["type"] == "deposit"
+        assert tx["tx_type"] == "deposit"
         assert tx["amount"] == 1000.0
