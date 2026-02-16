@@ -119,13 +119,7 @@
                 
                 <!-- Stats Overview -->
                 <div class="stats-grid" id="statsSection">
-                    <div class="stat-card">
-                        <div class="stat-icon">💰</div>
-                        <div class="stat-content">
-                            <div class="stat-label">Your Balance</div>
-                            <div class="stat-value" id="userBalance">$0</div>
-                        </div>
-                    </div>
+                    <!-- Your Balance section removed -->
                     <div class="stat-card">
                         <div class="stat-icon">🏦</div>
                         <div class="stat-content">
@@ -148,6 +142,7 @@
                         </div>
                     </div>
                 </div>
+
 
                 <!-- Deposit Section -->
                 <section id="depositSection" class="content-section active">
@@ -825,43 +820,47 @@
         }
 
         // Stats Management
+        // Stats Management
         async function refreshStats() {
             try {
                 console.log('[STATS] Fetching statistics...');
-                const [statsRes, healthRes] = await Promise.all([
-                    fetch(`${API_BASE}/statistics`, {
-                        headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
-                    }),
-                    fetch(`${API_BASE}/health`)
-                ]);
 
-                if (statsRes.ok) {
-                    const stats = await statsRes.json();
-                    console.log('[STATS] Statistics received:', stats);
-                    
-                    document.getElementById('totalDeposits').textContent = stats.total_deposits || 0;
-                    document.getElementById('totalWithdrawals').textContent = stats.total_withdrawals || 0;
-                    
-                    // Display user balance from API
-                    const userBalance = stats.user_balance || 0;
-                    document.getElementById('userBalance').textContent = `$${userBalance.toFixed(2)}`;
-                    console.log('[STATS] User balance:', userBalance);
-                    
-                    // Display total system balance from API
-                    const totalBalance = stats.total_balance || 0;
-                    document.getElementById('totalBalance').textContent = `$${totalBalance.toFixed(2)}`;
-                    console.log('[STATS] Total balance:', totalBalance);
+                const statsRes = await fetch(`${API_BASE}/statistics`, {
+                    headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
+                });
+
+                if (!statsRes.ok) {
+                    console.warn('[STATS] Failed to fetch statistics');
+                    return;
                 }
 
-                if (healthRes.ok) {
-                    const health = await healthRes.json();
-                    document.getElementById('systemStatus').textContent = health.status === 'operational' ? 'Operational' : 'Issues';
-                    document.getElementById('healthIcon').textContent = health.status === 'operational' ? '✓' : '⚠';
+                const stats = await statsRes.json();
+                console.log('[STATS] Statistics received:', stats);
+
+                // Safe numeric conversion
+                const totalDeposits = Number(stats.total_deposits) || 0;
+                const totalWithdrawals = Number(stats.total_withdrawals) || 0;
+                const totalBalance = Number(stats.total_balance) || 0;
+
+                // Update UI safely
+                const depositsEl = document.getElementById('totalDeposits');
+                const withdrawalsEl = document.getElementById('totalWithdrawals');
+                const totalBalanceEl = document.getElementById('totalBalance');
+
+                if (depositsEl) depositsEl.textContent = totalDeposits;
+                if (withdrawalsEl) withdrawalsEl.textContent = totalWithdrawals;
+                if (totalBalanceEl) {
+                    totalBalanceEl.textContent = `$${totalBalance.toFixed(2)}`;
                 }
+
+                console.log('[STATS] Updated UI successfully');
+                console.log('[STATS] Total balance:', totalBalance);
+
             } catch (error) {
                 console.error('[STATS] Error refreshing stats:', error);
             }
         }
+
 
         // Deposit Handler
         async function handleDeposit(e) {
